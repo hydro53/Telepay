@@ -19,7 +19,7 @@ async function sendTelegramMessage(chatId, text, keyboard) {
 const app = express();
 app.use(cors());
 app.use(express.static(__dirname));
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.get("/balance/:userId", (req, res) => {
   const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
