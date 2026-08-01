@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Telepay Wallet</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding-top: 50px;
+    }
+    .balance {
+      font-size: 48px;
+      font-weight: bold;
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <h1>Telepay</h1>
+  <p>Your balance</p>
+  <div class="balance" id="balanceDisplay">Loading...</div>
+
+  <div style="margin-top: 30px;">
+    <input type="text" id="recipientInput" placeholder="@username" style="padding: 8px; font-size: 16px;">
+    <input type="number" id="amountInput" placeholder="Amount" style="padding: 8px; font-size: 16px;">
+    <button onclick="sendCoins()" style="padding: 8px 16px; font-size: 16px;">Send</button>
+  </div>
+
+  <div style="margin-top: 30px;">
+  <input type="text" id="requestUsernameInput" placeholder="@username" style="padding: 8px; font-size: 16px;">
+  <input type="number" id="requestAmountInput" placeholder="Amount" style="padding: 8px; font-size: 16px;">
+  <button onclick="requestCoins()" style="padding: 8px 16px; font-size: 16px;">Request</button>
+</div>
+
+<div id="pendingRequests" style="margin-top: 30px;"></div>
+
+<div style="margin-top: 30px;">
+  <h3>Recent Transactions</h3>
+  <div id="historyList"></div>
+</div>
+
+  <p id="statusMessage"></p>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+tg.expand();
+const userId = tg.initDataUnsafe?.user?.id || "7512356461";
+
+    function loadBalance() {
+      fetch(`/balance/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById("balanceDisplay").textContent = data.balance + " coins";
+        })
+        .catch(error => {
+          document.getElementById("balanceDisplay").textContent = "Error loading balance";
+        });
+    }
+
+    function sendCoins() {
+      const recipientUsername = document.getElementById("recipientInput").value.replace("@", "");
+      const amount = parseInt(document.getElementById("amountInput").value);
+
+      fetch("/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senderId: userId, recipientUsername, amount })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            document.getElementById("statusMessage").textContent = data.error;
+          } else {
+            document.getElementById("statusMessage").textContent = "Sent successfully!";
+            loadBalance();
+          }
+        });
+    }
+function requestCoins() {
+  const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
+  const amount = parseInt(document.getElementById("requestAmountInput").value);
+
+  fetch("/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ requesterId: userId, targetUsername, amount })
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        document.getElementById("statusMessage").textContent = data.error;
+      } else {
+        document.getElementById("statusMessage").textContent = "Request sent!";
+      }
+    });
+}
+
+function loadPendingRequests() {
+  fetch(`/requests/${userId}`)
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById("pendingRequests");
+      container.innerHTML = "";
+      data.requests.forEach(r => {
+        const div = document.createElement("div");
+        div.style.margin = "10px";
+        div.innerHTML = `
+          <p>Someone is requesting ${r.amount} coins from you.</p>
+          <button onclick="respondRequest(${r.index}, 'confirm')" style="padding: 8px 16px;">Confirm</button>
+          <button onclick="respondRequest(${r.index}, 'decline')" style="padding: 8px 16px;">Decline</button>
+        `;
+        container.appendChild(div);
+      });
+    });
+}
+
+function respondRequest(index, action) {
+  fetch(`/requests/${index}/respond`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action })
+  })
+    .then(response => response.json())
+    .then(data => {
+      loadBalance();
+      loadPendingRequests();
+    });
+}
+
+function loadHistory() {
+  fetch(`/transactions/${userId}`)
+    .then(response => response.json())
+    .then(data => {
+      const container = document.getElementById("historyList");
+      container.innerHTML = "";
+
+      if (data.transactions.length === 0) {
+        container.textContent = "No transactions yet.";
+        return;
+      }
+
+      data.transactions.forEach(t => {
+        const isSender = t.from == data.userId;
+        const direction = isSender ? "Sent" : "Received";
+        const date = new Date(t.date).toLocaleDateString();
+        const line = document.createElement("p");
+        line.textContent = `${direction} ${t.amount} coins — ${date}`;
+        container.appendChild(line);
+      });
+    });
+}
+    loadBalance();
+loadPendingRequests();
+  </script>
+</body>
+</html>
