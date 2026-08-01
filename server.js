@@ -2,7 +2,7 @@ const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
 
-const BOT_TOKEN = "8752348602:AAFvkRDGkuOpU2W0pAVr9KENNQs7NRhHK7g";
+const BOT_TOKEN = process.env.BOT_TOKEN;
 
 async function sendTelegramMessage(chatId, text, keyboard) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
