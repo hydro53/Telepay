@@ -16,6 +16,8 @@
       font-weight: bold;
       color: #4ade80;
     }
+
+
   </style>
 </head>
 <body>
@@ -40,6 +42,12 @@
 <div style="margin-top: 30px;">
   <h3>Recent Transactions</h3>
   <div id="historyList"></div>
+</div>
+
+<div class="card">
+  <h3>TON Wallet</h3>
+  <div id="ton-connect-button"></div>
+  <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
 </div>
 
   <p id="statusMessage"></p>
@@ -152,6 +160,18 @@ function loadHistory() {
       });
     });
 }
+const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl: 'https://telepay-production.up.railway.app//tonconnect-manifest.json',
+  buttonRootId: 'ton-connect-button'
+});
+
+tonConnectUI.onStatusChange(wallet => {
+  if (wallet) {
+    document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
+  } else {
+    document.getElementById('tonAddress').textContent = '';
+  }
+});
     loadBalance();
 loadPendingRequests();
   </script>
