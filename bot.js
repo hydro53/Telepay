@@ -187,4 +187,17 @@ bot.command("history", (ctx) => {
   ctx.reply(`Your last ${transactions.length} transactions:\n\n${lines.join("\n")}`);
 });
 
+const { TonClient } = require("@ton/ton");
+
+const tonClient = new TonClient({
+  endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+});
+
+bot.command("tonbalance", async (ctx) => {
+  const address = "0QBmeEbTXtyzLT8BvbVyXxqOqogeeI-RXhtZQ0g03Z51c5bd"; // temporary, for testing
+  const balance = await tonClient.getBalance(address);
+  const tonAmount = Number(balance) / 1_000_000_000;
+  ctx.reply(`TON balance: ${tonAmount} TON`);
+});
+
 bot.start();
