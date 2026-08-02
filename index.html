@@ -51,6 +51,13 @@
   <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
 </div>
 
+<div class="card">
+  <h3>Send Real TON (Testnet)</h3>
+  <input type="text" id="tonRecipientInput" placeholder="Recipient TON address">
+  <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
+  <button onclick="sendRealTon()">Send TON</button>
+</div>
+
   <p id="statusMessage"></p>
 
   <script>
@@ -173,6 +180,34 @@ tonConnectUI.onStatusChange(wallet => {
     document.getElementById('tonAddress').textContent = '';
   }
 });
+async function sendRealTon() {
+  const recipientAddress = document.getElementById("tonRecipientInput").value;
+  const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
+
+  if (!tonConnectUI.connected) {
+    document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
+    return;
+  }
+
+  const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
+
+  const transaction = {
+    validUntil: Math.floor(Date.now() / 1000) + 300,
+    messages: [
+      {
+        address: recipientAddress,
+        amount: amountNano
+      }
+    ]
+  };
+
+  try {
+    await tonConnectUI.sendTransaction(transaction);
+    document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
+  } catch (error) {
+    document.getElementById("statusMessage").textContent = "Transaction cancelled or failed.";
+  }
+}
     loadBalance();
 loadPendingRequests();
   </script>
