@@ -2,6 +2,7 @@
 <html>
 <head>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   <title>Telepay Wallet</title>
   <style>
     body {
@@ -161,7 +162,7 @@ function loadHistory() {
     });
 }
 const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://telepay-production.up.railway.app//tonconnect-manifest.json',
+  manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
   buttonRootId: 'ton-connect-button'
 });
 
