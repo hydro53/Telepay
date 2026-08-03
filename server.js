@@ -151,6 +151,15 @@ app.post("/requests/:index/respond", async (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/link-wallet", (req, res) => {
+  const { userId, tonAddress } = req.body;
+  const data = loadData();
+  if (!data.tonWallets) data.tonWallets = {};
+  data.tonWallets[userId] = tonAddress;
+  fs.writeFileSync("telepay-data.json", JSON.stringify(data, null, 2));
+  res.json({ success: true });
+});
+
 app.get("/transactions/:userId", (req, res) => {
   const data = loadData();
   const userId = req.params.userId;

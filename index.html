@@ -176,6 +176,11 @@ const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
 tonConnectUI.onStatusChange(wallet => {
   if (wallet) {
     document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
+    fetch('/link-wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, tonAddress: wallet.account.address })
+    });
   } else {
     document.getElementById('tonAddress').textContent = '';
   }
