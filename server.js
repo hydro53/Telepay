@@ -4,6 +4,13 @@ const cors = require("cors");
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
+function loadData() {
+  if (!fs.existsSync("telepay-data.json")) {
+    return { balances: {}, usernames: {}, requests: [], transactions: [] };
+  }
+  return JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+}
+
 async function sendTelegramMessage(chatId, text, keyboard) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
     method: "POST",
@@ -22,7 +29,7 @@ app.use(express.static(__dirname));
 const PORT = process.env.PORT || 3000;
 
 app.get("/balance/:userId", (req, res) => {
-  const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+  const data = loadData();
   const balance = data.balances[req.params.userId] || 0;
   console.log("Looking for userId:", req.params.userId, "Found:", data.balances);
   res.json({ balance });
@@ -34,7 +41,7 @@ app.use(bodyParser.json());
 app.post("/send", async (req, res) => {
   const { senderId, recipientUsername, amount } = req.body;
 
-  const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+  const data = loadData();
   const recipientId = data.usernames[recipientUsername.toLowerCase()];
 
   if (!recipientId) {
@@ -68,7 +75,7 @@ fs.writeFileSync("telepay-data.json", JSON.stringify(data, null, 2));
 app.post("/request", async (req, res) => {
   const { requesterId, targetUsername, amount } = req.body;
 
-  const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+  const data = loadData();
   const targetId = data.usernames[targetUsername.toLowerCase()];
 
   if (!targetId) {
@@ -95,7 +102,7 @@ app.post("/request", async (req, res) => {
 });
 
 app.get("/requests/:userId", (req, res) => {
-  const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+  const data = loadData();
   if (!data.requests) data.requests = [];
 
   const myRequests = data.requests
@@ -107,7 +114,7 @@ app.get("/requests/:userId", (req, res) => {
 
 app.post("/requests/:index/respond", async (req, res) => {
   const { action } = req.body;
-  const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+  const data = loadData();
   const request = data.requests[req.params.index];
 
   if (!request || request.status !== "pending") {
@@ -145,7 +152,7 @@ app.post("/requests/:index/respond", async (req, res) => {
 });
 
 app.get("/transactions/:userId", (req, res) => {
-  const data = JSON.parse(fs.readFileSync("telepay-data.json", "utf8"));
+  const data = loadData();
   const userId = req.params.userId;
 
   const transactions = (data.transactions || [])
