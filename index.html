@@ -208,34 +208,7 @@ async function sendRealTon() {
     document.getElementById("statusMessage").textContent = "Transaction cancelled or failed.";
   }
 }
-async function sendRealTon() {
-  const recipientAddress = document.getElementById("tonRecipientInput").value;
-  const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
 
-  if (!tonConnectUI.connected) {
-    document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
-    return;
-  }
-
-  const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
-
-  const transaction = {
-    validUntil: Math.floor(Date.now() / 1000) + 300,
-    messages: [
-      {
-        address: recipientAddress,
-        amount: amountNano
-      }
-    ]
-  };
-
-  try {
-    await tonConnectUI.sendTransaction(transaction);
-    document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
-  } catch (error) {
-    document.getElementById("statusMessage").textContent = "Transaction cancelled or failed.";
-  }
-}
     loadBalance();
 loadPendingRequests();
   </script>
