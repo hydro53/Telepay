@@ -1,7 +1,7 @@
 const { Bot, InlineKeyboard } = require("grammy");
 const fs = require("fs");
 
-const bot = new Bot("8752348602:AAFvkRDGkuOpU2W0pAVr9KENNQs7NRhHK7g");
+const bot = new Bot(process.env.BOT_TOKEN);
 const DB_FILE = "telepay-data.json";
 
 function loadData() {
