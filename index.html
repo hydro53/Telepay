@@ -1,24 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
   <title>Telepay Wallet</title>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #0f172a;
       color: white;
       text-align: center;
-      padding-top: 50px;
+      padding: 30px 16px;
+      margin: 0;
+    }
+    h1 {
+      font-size: 28px;
+      margin-bottom: 4px;
     }
     .balance {
-      font-size: 48px;
+      font-size: 44px;
       font-weight: bold;
       color: #4ade80;
+      margin: 16px 0 30px;
     }
-
-
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 16px auto;
+      max-width: 400px;
+    }
+    .card h3 {
+      margin-top: 0;
+      font-size: 14px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: white;
+      margin-bottom: 10px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #4ade80;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      border: none;
+      background: #4ade80;
+      color: #0f172a;
+      cursor: pointer;
+    }
+    button:active {
+      opacity: 0.8;
+    }
+    #statusMessage {
+      color: #94a3b8;
+      min-height: 20px;
+    }
+    #historyList p {
+      text-align: left;
+      padding: 8px 0;
+      border-bottom: 1px solid #334155;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -26,200 +83,119 @@
   <p>Your balance</p>
   <div class="balance" id="balanceDisplay">Loading...</div>
 
-  <div style="margin-top: 30px;">
-    <input type="text" id="recipientInput" placeholder="@username" style="padding: 8px; font-size: 16px;">
-    <input type="number" id="amountInput" placeholder="Amount" style="padding: 8px; font-size: 16px;">
-    <button onclick="sendCoins()" style="padding: 8px 16px; font-size: 16px;">Send</button>
+  <div class="card">
+    <h3>TON Wallet</h3>
+    <div id="ton-connect-button"></div>
+    <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
   </div>
 
-  <div style="margin-top: 30px;">
-  <input type="text" id="requestUsernameInput" placeholder="@username" style="padding: 8px; font-size: 16px;">
-  <input type="number" id="requestAmountInput" placeholder="Amount" style="padding: 8px; font-size: 16px;">
-  <button onclick="requestCoins()" style="padding: 8px 16px; font-size: 16px;">Request</button>
-</div>
+  <div class="card">
+    <h3>Send TON (Testnet)</h3>
+    <input type="text" id="tonRecipientInput" placeholder="Recipient TON address">
+    <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
+    <button onclick="sendRealTon()">Send TON</button>
+  </div>
 
-<div id="pendingRequests" style="margin-top: 30px;"></div>
-
-<div style="margin-top: 30px;">
-  <h3>Recent Transactions</h3>
-  <div id="historyList"></div>
-</div>
-
-<div class="card">
-  <h3>TON Wallet</h3>
-  <div id="ton-connect-button"></div>
-  <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
-</div>
-
-<div class="card">
-  <h3>Send Real TON (Testnet)</h3>
-  <input type="text" id="tonRecipientInput" placeholder="Recipient TON address">
-  <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
-  <button onclick="sendRealTon()">Send TON</button>
-</div>
+  <div class="card">
+    <h3>Recent Transactions</h3>
+    <div id="historyList"></div>
+  </div>
 
   <p id="statusMessage"></p>
 
   <script>
     const tg = window.Telegram.WebApp;
-tg.expand();
-const userId = tg.initDataUnsafe?.user?.id || "7512356461";
+    tg.expand();
+    const userId = tg.initDataUnsafe?.user?.id || "7512356461";
 
     function loadBalance() {
-  fetch(`/ton-balance/${userId}`)
-    .then(response => response.json())
-    .then(data => {
-      if (!data.connected) {
-        document.getElementById("balanceDisplay").textContent = "Connect wallet";
-      } else {
-        document.getElementById("balanceDisplay").textContent = data.balance + " TON";
-      }
-    })
-    .catch(error => {
-      document.getElementById("balanceDisplay").textContent = "Error loading balance";
-    });
-}
-
-    function sendCoins() {
-      const recipientUsername = document.getElementById("recipientInput").value.replace("@", "");
-      const amount = parseInt(document.getElementById("amountInput").value);
-
-      fetch("/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ senderId: userId, recipientUsername, amount })
-      })
+      fetch(`/ton-balance/${userId}`)
         .then(response => response.json())
         .then(data => {
-          if (data.error) {
-            document.getElementById("statusMessage").textContent = data.error;
+          if (!data.connected) {
+            document.getElementById("balanceDisplay").textContent = "Connect wallet";
           } else {
-            document.getElementById("statusMessage").textContent = "Sent successfully!";
-            loadBalance();
+            document.getElementById("balanceDisplay").textContent = data.balance + " TON";
           }
+        })
+        .catch(error => {
+          document.getElementById("balanceDisplay").textContent = "Error loading balance";
         });
     }
-function requestCoins() {
-  const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
-  const amount = parseInt(document.getElementById("requestAmountInput").value);
 
-  fetch("/request", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ requesterId: userId, targetUsername, amount })
-  })
-    .then(response => response.json())
-    .then(data => {
-      if (data.error) {
-        document.getElementById("statusMessage").textContent = data.error;
+    function loadHistory() {
+      fetch(`/transactions/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("historyList");
+          container.innerHTML = "";
+
+          if (!data.transactions || data.transactions.length === 0) {
+            container.textContent = "No transactions yet.";
+            return;
+          }
+
+          data.transactions.forEach(t => {
+            const isSender = t.from == userId;
+            const direction = isSender ? "Sent" : "Received";
+            const date = new Date(t.date).toLocaleDateString();
+            const line = document.createElement("p");
+            line.textContent = `${direction} ${t.amount} coins — ${date}`;
+            container.appendChild(line);
+          });
+        });
+    }
+
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
+      buttonRootId: 'ton-connect-button'
+    });
+
+    tonConnectUI.onStatusChange(wallet => {
+      if (wallet) {
+        document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
+        fetch('/link-wallet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, tonAddress: wallet.account.address })
+        }).then(() => loadBalance());
       } else {
-        document.getElementById("statusMessage").textContent = "Request sent!";
+        document.getElementById('tonAddress').textContent = '';
       }
     });
-}
 
-function loadPendingRequests() {
-  fetch(`/requests/${userId}`)
-    .then(response => response.json())
-    .then(data => {
-      const container = document.getElementById("pendingRequests");
-      container.innerHTML = "";
-      data.requests.forEach(r => {
-        const div = document.createElement("div");
-        div.style.margin = "10px";
-        div.innerHTML = `
-          <p>Someone is requesting ${r.amount} coins from you.</p>
-          <button onclick="respondRequest(${r.index}, 'confirm')" style="padding: 8px 16px;">Confirm</button>
-          <button onclick="respondRequest(${r.index}, 'decline')" style="padding: 8px 16px;">Decline</button>
-        `;
-        container.appendChild(div);
-      });
-    });
-}
+    async function sendRealTon() {
+      const recipientAddress = document.getElementById("tonRecipientInput").value;
+      const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
 
-function respondRequest(index, action) {
-  fetch(`/requests/${index}/respond`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action })
-  })
-    .then(response => response.json())
-    .then(data => {
-      loadBalance();
-      loadPendingRequests();
-    });
-}
-
-function loadHistory() {
-  fetch(`/transactions/${userId}`)
-    .then(response => response.json())
-    .then(data => {
-      const container = document.getElementById("historyList");
-      container.innerHTML = "";
-
-      if (data.transactions.length === 0) {
-        container.textContent = "No transactions yet.";
+      if (!tonConnectUI.connected) {
+        document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
         return;
       }
 
-      data.transactions.forEach(t => {
-        const isSender = t.from == data.userId;
-        const direction = isSender ? "Sent" : "Received";
-        const date = new Date(t.date).toLocaleDateString();
-        const line = document.createElement("p");
-        line.textContent = `${direction} ${t.amount} coins — ${date}`;
-        container.appendChild(line);
-      });
-    });
-}
-const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-  manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
-  buttonRootId: 'ton-connect-button'
-});
+      const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
 
-tonConnectUI.onStatusChange(wallet => {
-  if (wallet) {
-    document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
-    fetch('/link-wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, tonAddress: wallet.account.address })
-    });
-  } else {
-    document.getElementById('tonAddress').textContent = '';
-  }
-});
-async function sendRealTon() {
-  const recipientAddress = document.getElementById("tonRecipientInput").value;
-  const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
+      const transaction = {
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [
+          {
+            address: recipientAddress,
+            amount: amountNano
+          }
+        ]
+      };
 
-  if (!tonConnectUI.connected) {
-    document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
-    return;
-  }
-
-  const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
-
-  const transaction = {
-    validUntil: Math.floor(Date.now() / 1000) + 300,
-    messages: [
-      {
-        address: recipientAddress,
-        amount: amountNano
+      try {
+        await tonConnectUI.sendTransaction(transaction);
+        document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
+        setTimeout(loadBalance, 3000);
+      } catch (error) {
+        document.getElementById("statusMessage").textContent = "Transaction cancelled or failed.";
       }
-    ]
-  };
-
-  try {
-    await tonConnectUI.sendTransaction(transaction);
-    document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
-  } catch (error) {
-    document.getElementById("statusMessage").textContent = "Transaction cancelled or failed.";
-  }
-}
+    }
 
     loadBalance();
-loadPendingRequests();
+    loadHistory();
   </script>
 </body>
 </html>
