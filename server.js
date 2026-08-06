@@ -172,6 +172,28 @@ app.get("/transactions/:userId", (req, res) => {
   res.json({ transactions, userId });
 });
 
+const { TonClient } = require("@ton/ton");
+const tonClient = new TonClient({
+  endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+});
+
+app.get("/ton-balance/:userId", async (req, res) => {
+  const data = loadData();
+  const tonAddress = data.tonWallets?.[req.params.userId];
+
+  if (!tonAddress) {
+    return res.json({ balance: null, connected: false });
+  }
+
+  try {
+    const balance = await tonClient.getBalance(tonAddress);
+    const tonAmount = Number(balance) / 1_000_000_000;
+    res.json({ balance: tonAmount, connected: true });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch balance" });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

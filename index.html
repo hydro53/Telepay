@@ -66,15 +66,19 @@ tg.expand();
 const userId = tg.initDataUnsafe?.user?.id || "7512356461";
 
     function loadBalance() {
-      fetch(`/balance/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById("balanceDisplay").textContent = data.balance + " coins";
-        })
-        .catch(error => {
-          document.getElementById("balanceDisplay").textContent = "Error loading balance";
-        });
-    }
+  fetch(`/ton-balance/${userId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (!data.connected) {
+        document.getElementById("balanceDisplay").textContent = "Connect wallet";
+      } else {
+        document.getElementById("balanceDisplay").textContent = data.balance + " TON";
+      }
+    })
+    .catch(error => {
+      document.getElementById("balanceDisplay").textContent = "Error loading balance";
+    });
+}
 
     function sendCoins() {
       const recipientUsername = document.getElementById("recipientInput").value.replace("@", "");
