@@ -194,6 +194,8 @@ app.get("/ton-balance/:userId", async (req, res) => {
   }
 });
 
+const { Address } = require("@ton/core");
+
 app.get("/resolve-ton-address/:username", (req, res) => {
   const data = loadData();
   const username = req.params.username.toLowerCase();
@@ -203,12 +205,17 @@ app.get("/resolve-ton-address/:username", (req, res) => {
     return res.status(404).json({ error: "User not found" });
   }
 
-  const tonAddress = data.tonWallets?.[targetUserId];
-  if (!tonAddress) {
+  const rawAddress = data.tonWallets?.[targetUserId];
+  if (!rawAddress) {
     return res.status(404).json({ error: "This user hasn't connected a TON wallet yet" });
   }
 
-  res.json({ tonAddress });
+  try {
+    const formattedAddress = Address.parse(rawAddress).toString();
+    res.json({ tonAddress: formattedAddress });
+  } catch (error) {
+    res.status(500).json({ error: "Invalid stored address" });
+  }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
