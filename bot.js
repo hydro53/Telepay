@@ -194,10 +194,22 @@ const tonClient = new TonClient({
 });
 
 bot.command("tonbalance", async (ctx) => {
-  const address = "0QBmeEbTXtyzLT8BvbVyXxqOqogeeI-RXhtZQ0g03Z51c5bd"; // temporary, for testing
-  const balance = await tonClient.getBalance(address);
-  const tonAmount = Number(balance) / 1_000_000_000;
-  ctx.reply(`TON balance: ${tonAmount} TON`);
+  const data = loadData();
+  const userId = ctx.from.id;
+  const tonAddress = data.tonWallets?.[userId];
+
+  if (!tonAddress) {
+    ctx.reply("You haven't connected a TON wallet yet. Open your Telepay wallet and tap Connect Wallet first.");
+    return;
+  }
+
+  try {
+    const balance = await tonClient.getBalance(tonAddress);
+    const tonAmount = Number(balance) / 1_000_000_000;
+    ctx.reply(`Your TON balance: ${tonAmount} TON`);
+  } catch (error) {
+    ctx.reply("Couldn't fetch your balance right now. Try again shortly.");
+  }
 });
 
 bot.start();
