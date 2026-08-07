@@ -58,31 +58,30 @@ bot.command("send", (ctx) => {
 });
 
 bot.command("request", (ctx) => {
-  const data = loadData();
-  const requesterId = ctx.from.id;
   const requesterUsername = ctx.from.username;
   const parts = ctx.match.split(" ");
-  const targetUsername = parts[0].replace("@", "").toLowerCase();
-  const amount = parseInt(parts[1]);
+  const amount = parts[0];
+  const targetUsername = parts[1]?.replace("@", "");
 
-  const targetId = data.usernames[targetUsername];
+  if (!amount || !targetUsername) {
+    ctx.reply("Usage: /request amount @username");
+    return;
+  }
+
+  const data = loadData();
+  const targetId = data.usernames?.[targetUsername.toLowerCase()];
 
   if (!targetId) {
     ctx.reply("I don't know that username yet. Ask them to send /start to me first.");
     return;
   }
-  if (isNaN(amount) || amount <= 0) {
-    ctx.reply("Please enter a valid amount, like: /request @username 20");
-    return;
-  }
 
-  const keyboard = new InlineKeyboard()
-    .text("✅ Confirm Payment", `pay_confirm:${amount}:${requesterId}`)
-    .text("❌ Decline", `pay_decline:${amount}:${requesterId}`);
+  const miniAppUrl = `https://telepay-production.up.railway.app?to=${requesterUsername}&amount=${amount}`;
+  const keyboard = new InlineKeyboard().webApp("Open to pay", miniAppUrl);
 
   ctx.api.sendMessage(
     targetId,
-    `@${requesterUsername} is requesting ${amount} coins.`,
+    `@${requesterUsername} is requesting ${amount} TON from you. Tap below to review and pay from your wallet.`,
     { reply_markup: keyboard }
   );
 
