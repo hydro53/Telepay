@@ -185,9 +185,9 @@
         }
         recipientAddress = lookupData.tonAddress;
       } catch (error) {
-        document.getElementById("statusMessage").textContent = "Failed to look up recipient.";
-        return;
-      }
+  console.log("Transaction error details:", error);
+  document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
+}
 
       const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
 
