@@ -194,6 +194,23 @@ app.get("/ton-balance/:userId", async (req, res) => {
   }
 });
 
+app.get("/resolve-ton-address/:username", (req, res) => {
+  const data = loadData();
+  const username = req.params.username.toLowerCase();
+  const targetUserId = data.usernames?.[username];
+
+  if (!targetUserId) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const tonAddress = data.tonWallets?.[targetUserId];
+  if (!tonAddress) {
+    return res.status(404).json({ error: "This user hasn't connected a TON wallet yet" });
+  }
+
+  res.json({ tonAddress });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

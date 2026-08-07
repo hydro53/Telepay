@@ -91,7 +91,7 @@
 
   <div class="card">
     <h3>Send TON (Testnet)</h3>
-    <input type="text" id="tonRecipientInput" placeholder="Recipient TON address">
+    <input type="text" id="tonRecipientInput" placeholder="@username">
     <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
     <button onclick="sendRealTon()">Send TON</button>
   </div>
@@ -164,12 +164,28 @@
       }
     });
 
-    async function sendRealTon() {
-      const recipientAddress = document.getElementById("tonRecipientInput").value;
+   async function sendRealTon() {
+      const recipientUsername = document.getElementById("tonRecipientInput").value.replace("@", "");
       const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
 
       if (!tonConnectUI.connected) {
         document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
+        return;
+      }
+
+      document.getElementById("statusMessage").textContent = "Looking up recipient...";
+
+      let recipientAddress;
+      try {
+        const lookupResponse = await fetch(`/resolve-ton-address/${recipientUsername}`);
+        const lookupData = await lookupResponse.json();
+        if (lookupData.error) {
+          document.getElementById("statusMessage").textContent = lookupData.error;
+          return;
+        }
+        recipientAddress = lookupData.tonAddress;
+      } catch (error) {
+        document.getElementById("statusMessage").textContent = "Failed to look up recipient.";
         return;
       }
 
