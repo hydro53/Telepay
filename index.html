@@ -108,8 +108,8 @@
     tg.expand();
     const userId = tg.initDataUnsafe?.user?.id || "7512356461";
     const urlParams = new URLSearchParams(window.location.search);
-const prefillRecipient = urlParams.get("to");
-const prefillAmount = urlParams.get("amount");
+    const prefillRecipient = urlParams.get("to");
+    const prefillAmount = urlParams.get("amount");
 
     function loadBalance() {
       fetch(`/ton-balance/${userId}`)
@@ -143,7 +143,7 @@ const prefillAmount = urlParams.get("amount");
             const direction = isSender ? "Sent" : "Received";
             const date = new Date(t.date).toLocaleDateString();
             const line = document.createElement("p");
-            line.textContent = `${direction} ${t.amount} coins — ${date}`;
+            line.textContent = `${direction} ${t.amount} TON — ${date}`;
             container.appendChild(line);
           });
         });
@@ -167,7 +167,7 @@ const prefillAmount = urlParams.get("amount");
       }
     });
 
-   async function sendRealTon() {
+    async function sendRealTon() {
       const recipientUsername = document.getElementById("tonRecipientInput").value.replace("@", "");
       const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
 
@@ -188,9 +188,9 @@ const prefillAmount = urlParams.get("amount");
         }
         recipientAddress = lookupData.tonAddress;
       } catch (error) {
-  console.log("Transaction error details:", error);
-  document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
-}
+        document.getElementById("statusMessage").textContent = "Failed to look up recipient.";
+        return;
+      }
 
       const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
 
@@ -209,16 +209,18 @@ const prefillAmount = urlParams.get("amount");
         document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
         setTimeout(loadBalance, 3000);
       } catch (error) {
-        document.getElementById("statusMessage").textContent = "Transaction cancelled or failed.";
+        console.log("Transaction error details:", error);
+        document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
       }
     }
 
     if (prefillRecipient) {
-  document.getElementById("tonRecipientInput").value = prefillRecipient;
-}
-if (prefillAmount) {
-  document.getElementById("tonAmountInput").value = prefillAmount;
-}
+      document.getElementById("tonRecipientInput").value = prefillRecipient;
+    }
+    if (prefillAmount) {
+      document.getElementById("tonAmountInput").value = prefillAmount;
+    }
+
     loadBalance();
     loadHistory();
   </script>

@@ -1,12 +1,17 @@
 const { Bot, InlineKeyboard } = require("grammy");
+const { TonClient } = require("@ton/ton");
 const fs = require("fs");
 
 const bot = new Bot(process.env.BOT_TOKEN);
 const DB_FILE = "telepay-data.json";
 
+const tonClient = new TonClient({
+  endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
+});
+
 function loadData() {
   if (!fs.existsSync(DB_FILE)) {
-    return { balances: {}, usernames: {} };
+    return { balances: {}, usernames: {}, tonWallets: {}, transactions: [] };
   }
   return JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
 }
@@ -20,22 +25,34 @@ bot.command("start", (ctx) => {
   const userId = ctx.from.id;
   const username = ctx.from.username;
 
-  if (data.balances[userId] === undefined) {
-    data.balances[userId] = 100;
-  }
   if (username) {
+    if (!data.usernames) data.usernames = {};
     data.usernames[username.toLowerCase()] = userId;
+    saveData(data);
   }
-  saveData(data);
 
-  ctx.reply("Welcome! You've been given 100 fake coins to start.");
+  ctx.reply(
+    "Welcome to Telepay! Open your wallet below to connect a TON wallet, then use /send and /request to move real testnet TON."
+  );
 });
 
-bot.command("balance", (ctx) => {
+bot.command("tonbalance", async (ctx) => {
   const data = loadData();
   const userId = ctx.from.id;
-  const amount = data.balances[userId] || 0;
-  ctx.reply(`Your balance is ${amount} coins.`);
+  const tonAddress = data.tonWallets?.[userId];
+
+  if (!tonAddress) {
+    ctx.reply("You haven't connected a TON wallet yet. Open your Telepay wallet and tap Connect Wallet first.");
+    return;
+  }
+
+  try {
+    const balance = await tonClient.getBalance(tonAddress);
+    const tonAmount = Number(balance) / 1_000_000_000;
+    ctx.reply(`Your TON balance: ${tonAmount} TON`);
+  } catch (error) {
+    ctx.reply("Couldn't fetch your balance right now. Try again shortly.");
+  }
 });
 
 bot.command("send", (ctx) => {
@@ -49,12 +66,12 @@ bot.command("send", (ctx) => {
   }
 
   const miniAppUrl = `https://telepay-production.up.railway.app?to=${targetUsername}&amount=${amount}`;
-
   const keyboard = new InlineKeyboard().webApp("Open to confirm send", miniAppUrl);
 
-  ctx.reply(`Ready to send ${amount} TON to @${targetUsername}. Tap below to review and confirm in your wallet.`, {
-    reply_markup: keyboard
-  });
+  ctx.reply(
+    `Ready to send ${amount} TON to @${targetUsername}. Tap below to review and confirm in your wallet.`,
+    { reply_markup: keyboard }
+  );
 });
 
 bot.command("request", (ctx) => {
@@ -86,112 +103,6 @@ bot.command("request", (ctx) => {
   );
 
   ctx.reply(`Request sent to @${targetUsername}.`);
-});
-
-bot.callbackQuery(/^pay_confirm:(\d+):(\d+)$/, (ctx) => {
-  const data = loadData();
-  const amount = parseInt(ctx.match[1]);
-  const requesterId = parseInt(ctx.match[2]);
-  const payerId = ctx.from.id;
-
-  const payerBalance = data.balances[payerId] || 0;
-  if (payerBalance < amount) {
-    ctx.reply("You don't have enough coins for this payment.");
-    return;
-  }
-
-  data.balances[payerId] = payerBalance - amount;
-  data.balances[requesterId] = (data.balances[requesterId] || 0) + amount;
-  saveData(data);
-
-  ctx.reply(`You paid ${amount} coins.`);
-  ctx.api.sendMessage(requesterId, `Your request for ${amount} coins was paid!`);
-});
-
-bot.callbackQuery(/^pay_decline:(\d+):(\d+)$/, (ctx) => {
-  const requesterId = parseInt(ctx.match[2]);
-  ctx.reply("You declined the request.");
-  ctx.api.sendMessage(requesterId, "Your payment request was declined.");
-});
-bot.callbackQuery(/^webreq:(\d+):(confirm|decline)$/, (ctx) => {
-  const index = parseInt(ctx.match[1]);
-  const action = ctx.match[2];
-  const data = loadData();
-
-  if (!data.requests || !data.requests[index] || data.requests[index].status !== "pending") {
-    ctx.reply("This request is no longer available.");
-    return;
-  }
-
-  const request = data.requests[index];
-
-  if (action === "decline") {
-    request.status = "declined";
-    saveData(data);
-    ctx.reply("You declined the request.");
-    bot.api.sendMessage(request.requesterId, "Your payment request was declined.");
-    return;
-  }
-
-  const payerBalance = data.balances[request.targetId] || 0;
-  if (payerBalance < request.amount) {
-    ctx.reply("You don't have enough coins for this payment.");
-    return;
-  }
-
-  data.balances[request.targetId] = payerBalance - request.amount;
-  data.balances[request.requesterId] = (data.balances[request.requesterId] || 0) + request.amount;
-  request.status = "confirmed";
-  saveData(data);
-
-  ctx.reply(`You paid ${request.amount} coins.`);
-  bot.api.sendMessage(request.requesterId, `Your request for ${request.amount} coins was paid!`);
-});
-bot.command("history", (ctx) => {
-  const data = loadData();
-  const userId = ctx.from.id;
-  const transactions = (data.transactions || [])
-    .filter(t => t.from === userId || t.to === userId)
-    .slice(-10)
-    .reverse();
-
-  if (transactions.length === 0) {
-    ctx.reply("You have no transactions yet.");
-    return;
-  }
-
-  const lines = transactions.map(t => {
-    const direction = t.from === userId ? "Sent" : "Received";
-    const date = new Date(t.date).toLocaleDateString();
-    return `${direction} ${t.amount} coins — ${date}`;
-  });
-
-  ctx.reply(`Your last ${transactions.length} transactions:\n\n${lines.join("\n")}`);
-});
-
-const { TonClient } = require("@ton/ton");
-
-const tonClient = new TonClient({
-  endpoint: "https://testnet.toncenter.com/api/v2/jsonRPC",
-});
-
-bot.command("tonbalance", async (ctx) => {
-  const data = loadData();
-  const userId = ctx.from.id;
-  const tonAddress = data.tonWallets?.[userId];
-
-  if (!tonAddress) {
-    ctx.reply("You haven't connected a TON wallet yet. Open your Telepay wallet and tap Connect Wallet first.");
-    return;
-  }
-
-  try {
-    const balance = await tonClient.getBalance(tonAddress);
-    const tonAmount = Number(balance) / 1_000_000_000;
-    ctx.reply(`Your TON balance: ${tonAmount} TON`);
-  } catch (error) {
-    ctx.reply("Couldn't fetch your balance right now. Try again shortly.");
-  }
 });
 
 bot.start();
