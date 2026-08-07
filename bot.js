@@ -39,39 +39,22 @@ bot.command("balance", (ctx) => {
 });
 
 bot.command("send", (ctx) => {
-  const data = loadData();
-  const senderId = ctx.from.id;
   const parts = ctx.match.split(" ");
-  const targetUsername = parts[0].replace("@", "").toLowerCase();
-  const amount = parseInt(parts[1]);
+  const targetUsername = parts[0]?.replace("@", "");
+  const amount = parts[1];
 
-  const recipientId = data.usernames[targetUsername];
-
-  if (!recipientId) {
-    ctx.reply("I don't know that username yet. Ask them to send /start to me first.");
-    return;
-  }
-  if (isNaN(amount) || amount <= 0) {
-    ctx.reply("Please enter a valid amount, like: /send @username 20");
+  if (!targetUsername || !amount) {
+    ctx.reply("Usage: /send @username amount");
     return;
   }
 
-  const senderBalance = data.balances[senderId] || 0;
-  if (senderBalance < amount) {
-    ctx.reply("You don't have enough coins for that.");
-    return;
-  }
+  const miniAppUrl = `https://telepay-production.up.railway.app?to=${targetUsername}&amount=${amount}`;
 
-  if (!data.transactions) data.transactions = [];
-  data.transactions.push({
-    type: "send",
-    from: senderId,
-    to: recipientId,
-    amount,
-    date: new Date().toISOString()
+  const keyboard = new InlineKeyboard().webApp("Open to confirm send", miniAppUrl);
+
+  ctx.reply(`Ready to send ${amount} TON to @${targetUsername}. Tap below to review and confirm in your wallet.`, {
+    reply_markup: keyboard
   });
-  saveData(data);
-  ctx.api.sendMessage(recipientId, `You received ${amount} coins from @${ctx.from.username}!`);
 });
 
 bot.command("request", (ctx) => {
