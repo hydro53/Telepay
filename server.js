@@ -36,6 +36,22 @@ app.post("/link-wallet", (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/log-transaction", (req, res) => {
+  const { from, to, amount } = req.body;
+  const data = loadData();
+
+  if (!data.transactions) data.transactions = [];
+  data.transactions.push({
+    from,
+    to,
+    amount,
+    date: new Date().toISOString()
+  });
+  saveData(data);
+
+  res.json({ success: true });
+});
+
 app.get("/ton-balance/:userId", async (req, res) => {
   const data = loadData();
   const tonAddress = data.tonWallets?.[req.params.userId];
