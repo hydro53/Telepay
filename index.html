@@ -101,6 +101,12 @@
     <div id="historyList"></div>
   </div>
 
+  <div class="card">
+  <h3>Receive TON</h3>
+  <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
+  <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
+</div>
+
   <p id="statusMessage"></p>
 
   <script>
@@ -155,17 +161,20 @@
     });
 
     tonConnectUI.onStatusChange(wallet => {
-      if (wallet) {
-        document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
-        fetch('/link-wallet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, tonAddress: wallet.account.address })
-        }).then(() => loadBalance());
-      } else {
-        document.getElementById('tonAddress').textContent = '';
-      }
-    });
+  if (wallet) {
+    document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
+    document.getElementById('receiveAddress').textContent = wallet.account.address;
+    QRCode.toCanvas(document.getElementById('qrCanvas'), wallet.account.address, { width: 200 });
+    fetch('/link-wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, tonAddress: wallet.account.address })
+    }).then(() => loadBalance());
+  } else {
+    document.getElementById('tonAddress').textContent = '';
+    document.getElementById('receiveAddress').textContent = '';
+  }
+});
 
     async function sendRealTon() {
       const recipientUsername = document.getElementById("tonRecipientInput").value.replace("@", "");
