@@ -145,16 +145,24 @@
             return;
           }
 
-          data.transactions.forEach(t => {
-            const isSender = t.from == userId;
-            const direction = isSender ? "Sent" : "Received";
-            const date = new Date(t.date).toLocaleDateString();
-            const line = document.createElement("p");
-            line.textContent = `${direction} ${t.amount} TON — ${date}`;
-            container.appendChild(line);
-          });
-        });
-    }
+         data.transactions.forEach(t => {
+  const isSender = t.from == userId;
+  const direction = isSender ? "Sent" : "Received";
+  const date = new Date(t.date).toLocaleDateString();
+  const line = document.createElement("p");
+  line.innerHTML = `${direction} ${t.amount} TON — ${date}`;
+
+  if (t.explorerAddress) {
+    const link = document.createElement("a");
+    link.href = `https://testnet.tonviewer.com/${t.explorerAddress}`;
+    link.target = "_blank";
+    link.textContent = " (View)";
+    link.style.color = "#4ade80";
+    line.appendChild(link);
+  }
+
+  container.appendChild(line);
+});
 
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
       manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
@@ -219,10 +227,10 @@
   document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
 
   await fetch("/log-transaction", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon })
-  });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon, explorerAddress: recipientAddress })
+});
 
   setTimeout(() => {
     loadBalance();
