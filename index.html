@@ -77,6 +77,9 @@
       border-bottom: 1px solid #334155;
       margin: 0;
     }
+    #historyList a {
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -103,10 +106,10 @@
   </div>
 
   <div class="card">
-  <h3>Receive TON</h3>
-  <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
-  <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
-</div>
+    <h3>Receive TON</h3>
+    <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
+    <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
+  </div>
 
   <p id="statusMessage"></p>
 
@@ -145,24 +148,26 @@
             return;
           }
 
-         data.transactions.forEach(t => {
-  const isSender = t.from == userId;
-  const direction = isSender ? "Sent" : "Received";
-  const date = new Date(t.date).toLocaleDateString();
-  const line = document.createElement("p");
-  line.innerHTML = `${direction} ${t.amount} TON — ${date}`;
+          data.transactions.forEach(t => {
+            const isSender = t.from == userId;
+            const direction = isSender ? "Sent" : "Received";
+            const date = new Date(t.date).toLocaleDateString();
+            const line = document.createElement("p");
+            line.innerHTML = `${direction} ${t.amount} TON — ${date}`;
 
-  if (t.explorerAddress) {
-    const link = document.createElement("a");
-    link.href = `https://testnet.tonviewer.com/${t.explorerAddress}`;
-    link.target = "_blank";
-    link.textContent = " (View)";
-    link.style.color = "#4ade80";
-    line.appendChild(link);
-  }
+            if (t.explorerAddress) {
+              const link = document.createElement("a");
+              link.href = `https://testnet.tonviewer.com/${t.explorerAddress}`;
+              link.target = "_blank";
+              link.textContent = " (View)";
+              link.style.color = "#4ade80";
+              line.appendChild(link);
+            }
 
-  container.appendChild(line);
-});
+            container.appendChild(line);
+          });
+        });
+    }
 
     const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
       manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
@@ -170,20 +175,20 @@
     });
 
     tonConnectUI.onStatusChange(wallet => {
-  if (wallet) {
-    document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
-    document.getElementById('receiveAddress').textContent = wallet.account.address;
-    QRCode.toCanvas(document.getElementById('qrCanvas'), wallet.account.address, { width: 200 });
-    fetch('/link-wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, tonAddress: wallet.account.address })
-    }).then(() => loadBalance());
-  } else {
-    document.getElementById('tonAddress').textContent = '';
-    document.getElementById('receiveAddress').textContent = '';
-  }
-});
+      if (wallet) {
+        document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
+        document.getElementById('receiveAddress').textContent = wallet.account.address;
+        QRCode.toCanvas(document.getElementById('qrCanvas'), wallet.account.address, { width: 200 });
+        fetch('/link-wallet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, tonAddress: wallet.account.address })
+        }).then(() => loadBalance());
+      } else {
+        document.getElementById('tonAddress').textContent = '';
+        document.getElementById('receiveAddress').textContent = '';
+      }
+    });
 
     async function sendRealTon() {
       const recipientUsername = document.getElementById("tonRecipientInput").value.replace("@", "");
@@ -223,20 +228,19 @@
       };
 
       try {
-  await tonConnectUI.sendTransaction(transaction);
-  document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
+        await tonConnectUI.sendTransaction(transaction);
+        document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
 
-  await fetch("/log-transaction", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon, explorerAddress: recipientAddress })
-});
+        await fetch("/log-transaction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon, explorerAddress: recipientAddress })
+        });
 
-  setTimeout(() => {
-    loadBalance();
-    loadHistory();
-  }, 3000);
-
+        setTimeout(() => {
+          loadBalance();
+          loadHistory();
+        }, 3000);
       } catch (error) {
         console.log("Transaction error details:", error);
         document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
