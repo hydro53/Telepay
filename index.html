@@ -270,11 +270,10 @@
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      requesterId: userId,
-      requesterUsername: tg.initDataUnsafe?.user?.username || "someone",
-      targetUsername,
-      amount
-    })
+  requesterId: userId,
+  targetUsername,
+  amount
+})
   });
   const data = await response.json();
 

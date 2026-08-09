@@ -54,13 +54,17 @@ app.post("/log-transaction", (req, res) => {
 });
 
 app.post("/send-request", async (req, res) => {
-  const { requesterId, requesterUsername, targetUsername, amount } = req.body;
+  const { requesterId, targetUsername, amount } = req.body;
   const data = loadData();
   const targetId = data.usernames?.[targetUsername.toLowerCase()];
 
   if (!targetId) {
     return res.status(400).json({ error: "User not found" });
   }
+
+  const requesterUsername = Object.keys(data.usernames || {}).find(
+    username => data.usernames[username] == requesterId
+  ) || "someone";
 
   const miniAppUrl = `https://telepay-production.up.railway.app?to=${requesterUsername}&amount=${amount}`;
 
