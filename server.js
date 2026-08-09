@@ -37,7 +37,7 @@ app.post("/link-wallet", (req, res) => {
 });
 
 app.post("/log-transaction", (req, res) => {
-  const { from, to, amount } = req.body;
+  const { from, to, amount, explorerAddress } = req.body;
   const data = loadData();
 
   if (!data.transactions) data.transactions = [];
@@ -45,6 +45,7 @@ app.post("/log-transaction", (req, res) => {
     from,
     to,
     amount,
+    explorerAddress,
     date: new Date().toISOString()
   });
   saveData(data);
