@@ -53,6 +53,32 @@ app.post("/log-transaction", (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/send-request", async (req, res) => {
+  const { requesterId, requesterUsername, targetUsername, amount } = req.body;
+  const data = loadData();
+  const targetId = data.usernames?.[targetUsername.toLowerCase()];
+
+  if (!targetId) {
+    return res.status(400).json({ error: "User not found" });
+  }
+
+  const miniAppUrl = `https://telepay-production.up.railway.app?to=${requesterUsername}&amount=${amount}`;
+
+  await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: targetId,
+      text: `@${requesterUsername} is requesting ${amount} TON from you. Tap below to review and pay.`,
+      reply_markup: {
+        inline_keyboard: [[{ text: "Open to pay", web_app: { url: miniAppUrl } }]]
+      }
+    })
+  });
+
+  res.json({ success: true });
+});
+
 app.get("/ton-balance/:userId", async (req, res) => {
   const data = loadData();
   const tonAddress = data.tonWallets?.[req.params.userId];

@@ -105,4 +105,29 @@ bot.command("request", (ctx) => {
   ctx.reply(`Request sent to @${targetUsername}.`);
 });
 
+bot.command("history", async (ctx) => {
+  const userId = ctx.from.id;
+
+  try {
+    const response = await fetch(`https://telepay-production.up.railway.app/transactions/${userId}`);
+    const data = await response.json();
+
+    if (!data.transactions || data.transactions.length === 0) {
+      ctx.reply("You have no transactions yet.");
+      return;
+    }
+
+    const lines = data.transactions.map(t => {
+      const isSender = t.from == userId;
+      const direction = isSender ? "Sent" : "Received";
+      const date = new Date(t.date).toLocaleDateString();
+      return `${direction} ${t.amount} TON — ${date}`;
+    });
+
+    ctx.reply(`Your last ${data.transactions.length} transactions:\n\n${lines.join("\n")}`);
+  } catch (error) {
+    ctx.reply("Couldn't load your transaction history right now.");
+  }
+});
+
 bot.start();

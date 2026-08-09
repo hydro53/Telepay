@@ -102,6 +102,13 @@
   </div>
 
   <div class="card">
+  <h3>Request TON</h3>
+  <input type="text" id="requestUsernameInput" placeholder="@username">
+  <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
+  <button onclick="requestRealTon()">Request TON</button>
+</div>
+
+  <div class="card">
     <h3>Recent Transactions</h3>
     <div id="historyList"></div>
   </div>
@@ -254,6 +261,29 @@
     if (prefillAmount) {
       document.getElementById("tonAmountInput").value = prefillAmount;
     }
+
+    async function requestRealTon() {
+  const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
+  const amount = document.getElementById("requestAmountInput").value;
+
+  const response = await fetch("/send-request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      requesterId: userId,
+      requesterUsername: tg.initDataUnsafe?.user?.username || "someone",
+      targetUsername,
+      amount
+    })
+  });
+  const data = await response.json();
+
+  if (data.error) {
+    document.getElementById("statusMessage").textContent = data.error;
+  } else {
+    document.getElementById("statusMessage").textContent = "Request sent!";
+  }
+}
 
     loadBalance();
     loadHistory();
