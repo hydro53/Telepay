@@ -256,11 +256,15 @@
     }
 
     if (prefillRecipient) {
-      document.getElementById("tonRecipientInput").value = prefillRecipient;
-    }
-    if (prefillAmount) {
-      document.getElementById("tonAmountInput").value = prefillAmount;
-    }
+  document.getElementById("tonRecipientInput").value = prefillRecipient;
+}
+if (prefillAmount) {
+  document.getElementById("tonAmountInput").value = prefillAmount;
+}
+if (prefillRecipient && prefillAmount) {
+  document.getElementById("statusMessage").innerHTML =
+    `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong><br>Review below and tap Send TON to confirm.`;
+}
 
     async function requestRealTon() {
   const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
