@@ -54,7 +54,7 @@ app.post("/log-transaction", (req, res) => {
 });
 
 app.post("/notify-payment", async (req, res) => {
-  const { senderId, recipientUsername, amount } = req.body;
+  const { senderId, recipientUsername, amount, requestId } = req.body;
   const data = loadData();
   const recipientId = data.usernames?.[recipientUsername.toLowerCase()];
 
@@ -82,6 +82,21 @@ app.post("/notify-payment", async (req, res) => {
     })
   });
 
+  if (requestId && data.pendingRequests?.[requestId]) {
+    const request = data.pendingRequests[requestId];
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/editMessageText`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: request.chatId,
+        message_id: request.messageId,
+        text: `✅ You paid ${amount} TON to @${senderUsername === "someone" ? recipientUsername : senderUsername}.`
+      })
+    });
+    delete data.pendingRequests[requestId];
+  }
+
+  saveData(data);
   res.json({ success: true });
 });
 
@@ -98,22 +113,34 @@ app.post("/send-request", async (req, res) => {
     username => data.usernames[username] == requesterId
   ) || "someone";
 
-  const miniAppUrl = `https://telepay-production.up.railway.app?to=${requesterUsername}&amount=${amount}`;
+  const requestId = Date.now().toString();
+  const miniAppUrl = `https://telepay-production.up.railway.app?to=${requesterUsername}&amount=${amount}&reqid=${requestId}`;
 
-  await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+  const sendResult = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: targetId,
       text: `@${requesterUsername} is requesting ${amount} TON from you. Tap below to review and pay.`,
-     reply_markup: {
-  inline_keyboard: [
-    [{ text: "Open to pay", web_app: { url: miniAppUrl } }],
-    [{ text: "❌ Decline", callback_data: `declinereq:${requesterId}:${amount}:${requesterUsername}` }]
-  ]
-}
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Open to pay", web_app: { url: miniAppUrl } }],
+          [{ text: "❌ Decline", callback_data: `declinereq:${requestId}` }]
+        ]
+      }
     })
-  });
+  }).then(r => r.json());
+
+  if (!data.pendingRequests) data.pendingRequests = {};
+  data.pendingRequests[requestId] = {
+    requesterId,
+    requesterUsername,
+    targetId,
+    amount,
+    chatId: targetId,
+    messageId: sendResult.result.message_id
+  };
+  saveData(data);
 
   res.json({ success: true });
 });

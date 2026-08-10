@@ -133,12 +133,21 @@ bot.command("history", async (ctx) => {
   }
 });
 
-bot.callbackQuery(/^declinereq:(\d+):([\d.]+):(.+)$/, (ctx) => {
-  const requesterId = parseInt(ctx.match[1]);
-  const amount = ctx.match[2];
+bot.callbackQuery(/^declinereq:(.+)$/, async (ctx) => {
+  const requestId = ctx.match[1];
+  const data = loadData();
+  const request = data.pendingRequests?.[requestId];
 
-  ctx.reply("You declined the request.");
-  ctx.api.sendMessage(requesterId, `Your request for ${amount} TON was declined.`);
+  if (!request) {
+    await ctx.editMessageText("This request is no longer available.");
+    return;
+  }
+
+  await ctx.editMessageText("❌ You declined this request.");
+  ctx.api.sendMessage(request.requesterId, `Your request for ${request.amount} TON was declined.`);
+
+  delete data.pendingRequests[requestId];
+  saveData(data);
 });
 
 bot.start();

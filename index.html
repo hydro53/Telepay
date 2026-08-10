@@ -126,7 +126,8 @@
     const userId = tg.initDataUnsafe?.user?.id || "7512356461";
     const urlParams = new URLSearchParams(window.location.search);
     const prefillRecipient = urlParams.get("to");
-    const prefillAmount = urlParams.get("amount");
+const prefillAmount = urlParams.get("amount");
+const requestId = urlParams.get("reqid");
 
     function loadBalance() {
       fetch(`/ton-balance/${userId}`)
@@ -245,10 +246,10 @@
         });
 
         await fetch("/notify-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon })
-        });
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon, requestId })
+});
 
         setTimeout(() => {
           loadBalance();
