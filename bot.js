@@ -65,8 +65,11 @@ bot.command("send", (ctx) => {
     return;
   }
 
-  const miniAppUrl = `https://telepay-production.up.railway.app?to=${targetUsername}&amount=${amount}`;
-  const keyboard = new InlineKeyboard().webApp("Open to confirm send", miniAppUrl);
+  const miniAppUrl = `https://telepay-production.up.railway.app?to=${requesterUsername}&amount=${amount}`;
+const keyboard = new InlineKeyboard()
+  .webApp("Open to pay", miniAppUrl)
+  .row()
+  .text("❌ Decline", `declinereq:${requesterId}:${amount}:${requesterUsername}`);
 
   ctx.reply(
     `Ready to send ${amount} TON to @${targetUsername}. Tap below to review and confirm in your wallet.`,
@@ -128,6 +131,14 @@ bot.command("history", async (ctx) => {
   } catch (error) {
     ctx.reply("Couldn't load your transaction history right now.");
   }
+});
+
+bot.callbackQuery(/^declinereq:(\d+):([\d.]+):(.+)$/, (ctx) => {
+  const requesterId = parseInt(ctx.match[1]);
+  const amount = ctx.match[2];
+
+  ctx.reply("You declined the request.");
+  ctx.api.sendMessage(requesterId, `Your request for ${amount} TON was declined.`);
 });
 
 bot.start();

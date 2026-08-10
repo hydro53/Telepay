@@ -106,9 +106,12 @@ app.post("/send-request", async (req, res) => {
     body: JSON.stringify({
       chat_id: targetId,
       text: `@${requesterUsername} is requesting ${amount} TON from you. Tap below to review and pay.`,
-      reply_markup: {
-        inline_keyboard: [[{ text: "Open to pay", web_app: { url: miniAppUrl } }]]
-      }
+     reply_markup: {
+  inline_keyboard: [
+    [{ text: "Open to pay", web_app: { url: miniAppUrl } }],
+    [{ text: "❌ Decline", callback_data: `declinereq:${requesterId}:${amount}:${requesterUsername}` }]
+  ]
+}
     })
   });
 
