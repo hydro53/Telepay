@@ -53,6 +53,38 @@ app.post("/log-transaction", (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/notify-payment", async (req, res) => {
+  const { senderId, recipientUsername, amount } = req.body;
+  const data = loadData();
+  const recipientId = data.usernames?.[recipientUsername.toLowerCase()];
+
+  const senderUsername = Object.keys(data.usernames || {}).find(
+    username => data.usernames[username] == senderId
+  ) || "someone";
+
+  if (recipientId) {
+    await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: recipientId,
+        text: `You received ${amount} TON from @${senderUsername}!`
+      })
+    });
+  }
+
+  await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: senderId,
+      text: `You sent ${amount} TON to @${recipientUsername}.`
+    })
+  });
+
+  res.json({ success: true });
+});
+
 app.post("/send-request", async (req, res) => {
   const { requesterId, targetUsername, amount } = req.body;
   const data = loadData();
