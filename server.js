@@ -134,6 +134,11 @@ app.get("/transactions/:userId", (req, res) => {
   res.json({ transactions, userId });
 });
 
+app.get("/debug-usernames", (req, res) => {
+  const data = loadData();
+  res.json({ usernames: data.usernames });
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
