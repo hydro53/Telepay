@@ -54,17 +54,16 @@
       border-color: #4ade80;
     }
     button {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  font-weight: bold;
-  border-radius: 10px;
-  border: none;
-  background: #000000;
-  color: #ffffff;
-  cursor: pointer;
-}
-
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 10px;
+      border: none;
+      background: #000000;
+      color: #ffffff;
+      cursor: pointer;
+    }
     button:active {
       opacity: 0.8;
     }
@@ -102,11 +101,11 @@
   </div>
 
   <div class="card">
-  <h3>Request TON</h3>
-  <input type="text" id="requestUsernameInput" placeholder="@username">
-  <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
-  <button onclick="requestRealTon()">Request TON</button>
-</div>
+    <h3>Request TON</h3>
+    <input type="text" id="requestUsernameInput" placeholder="@username">
+    <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
+    <button onclick="requestRealTon()">Request TON</button>
+  </div>
 
   <div class="card">
     <h3>Recent Transactions</h3>
@@ -245,6 +244,12 @@
           body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon, explorerAddress: recipientAddress })
         });
 
+        await fetch("/notify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon })
+        });
+
         setTimeout(() => {
           loadBalance();
           loadHistory();
@@ -255,38 +260,38 @@
       }
     }
 
-    if (prefillRecipient) {
-  document.getElementById("tonRecipientInput").value = prefillRecipient;
-}
-if (prefillAmount) {
-  document.getElementById("tonAmountInput").value = prefillAmount;
-}
-if (prefillRecipient && prefillAmount) {
-  document.getElementById("statusMessage").innerHTML =
-    `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong><br>Review below and tap Send TON to confirm.`;
-}
-
     async function requestRealTon() {
-  const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
-  const amount = document.getElementById("requestAmountInput").value;
+      const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
+      const amount = document.getElementById("requestAmountInput").value;
 
-  const response = await fetch("/send-request", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-  requesterId: userId,
-  targetUsername,
-  amount
-})
-  });
-  const data = await response.json();
+      const response = await fetch("/send-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requesterId: userId,
+          targetUsername,
+          amount
+        })
+      });
+      const data = await response.json();
 
-  if (data.error) {
-    document.getElementById("statusMessage").textContent = data.error;
-  } else {
-    document.getElementById("statusMessage").textContent = "Request sent!";
-  }
-}
+      if (data.error) {
+        document.getElementById("statusMessage").textContent = data.error;
+      } else {
+        document.getElementById("statusMessage").textContent = "Request sent!";
+      }
+    }
+
+    if (prefillRecipient) {
+      document.getElementById("tonRecipientInput").value = prefillRecipient;
+    }
+    if (prefillAmount) {
+      document.getElementById("tonAmountInput").value = prefillAmount;
+    }
+    if (prefillRecipient && prefillAmount) {
+      document.getElementById("statusMessage").innerHTML =
+        `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong><br>Review below and tap Send TON to confirm.`;
+    }
 
     loadBalance();
     loadHistory();
