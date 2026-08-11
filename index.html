@@ -9,15 +9,20 @@
     * { box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #1a237e;
       color: white;
       margin: 0;
       padding: 0;
       min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(94, 114, 235, 0.35), transparent 45%),
+        radial-gradient(circle at 100% 20%, rgba(56, 189, 248, 0.2), transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(74, 222, 128, 0.12), transparent 40%),
+        linear-gradient(180deg, #0d1445 0%, #1a237e 40%, #12185a 100%);
+      background-attachment: fixed;
     }
     .screen {
       display: none;
-      padding: 30px 16px;
+      padding: 30px 16px 60px;
       max-width: 400px;
       margin: 0 auto;
     }
@@ -42,6 +47,7 @@
       font-size: 28px;
       margin: 0 0 4px;
       text-align: center;
+      letter-spacing: 0.5px;
     }
     h2 {
       font-size: 20px;
@@ -51,20 +57,27 @@
       font-size: 44px;
       font-weight: bold;
       color: #ffffff;
-      margin: 16px 0 30px;
+      margin: 16px 0 6px;
       text-align: center;
+      text-shadow: 0 2px 20px rgba(94, 114, 235, 0.6);
     }
     .balance-label {
       text-align: center;
       color: #b0bec5;
       margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
     .card {
-      background: #283593;
-      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(40, 53, 147, 0.85), rgba(26, 35, 126, 0.85));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
       padding: 20px;
       margin: 16px auto;
       max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     }
     .card h3 {
       margin-top: 0;
@@ -73,6 +86,33 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    .profile-banner {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      border-radius: 18px;
+      padding: 18px 20px;
+      margin: 16px auto 24px;
+      max-width: 400px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35);
+    }
+    .profile-banner div strong {
+      display: block;
+      color: #0f172a;
+      font-size: 15px;
+    }
+    .profile-banner div span {
+      color: #0f172a;
+      opacity: 0.75;
+      font-size: 12px;
+    }
+    .profile-banner .arrow {
+      color: #0f172a;
+      font-size: 20px;
+      font-weight: bold;
+    }
     .action-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -80,12 +120,12 @@
       margin: 24px 0;
     }
     .action-btn {
-      background: #283593;
-      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(40, 53, 147, 0.9), rgba(26, 35, 126, 0.9));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
       padding: 16px 8px;
       text-align: center;
       cursor: pointer;
-      border: none;
       color: white;
       font-size: 14px;
       font-weight: bold;
@@ -101,7 +141,7 @@
       font-size: 16px;
       border-radius: 10px;
       border: 1px solid #334155;
-      background: #1a237e;
+      background: rgba(13, 20, 69, 0.6);
       color: white;
       margin-bottom: 10px;
     }
@@ -123,6 +163,17 @@
     button.primary:active {
       opacity: 0.8;
     }
+    .badge {
+      display: inline-block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: 6px;
+    }
     #statusMessage {
       color: #94a3b8;
       min-height: 20px;
@@ -131,7 +182,7 @@
     #historyList p {
       text-align: left;
       padding: 8px 0;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       margin: 0;
     }
     #historyList a {
@@ -142,11 +193,18 @@
 </head>
 <body>
 
-  <!-- HOME SCREEN -->
   <div class="screen active" id="homeScreen">
     <h1>Telepay</h1>
     <p class="balance-label">Your balance</p>
     <div class="balance" id="balanceDisplay">Loading...</div>
+
+    <div class="profile-banner" id="profileBanner" style="display: none;" onclick="showScreen('walletScreen')">
+      <div>
+        <strong>Complete your profile</strong>
+        <span>Connect a wallet to send &amp; receive</span>
+      </div>
+      <div class="arrow">→</div>
+    </div>
 
     <div class="action-grid">
       <button class="action-btn" onclick="showScreen('sendScreen')">
@@ -166,7 +224,6 @@
     </div>
   </div>
 
-  <!-- SEND SCREEN -->
   <div class="screen" id="sendScreen">
     <div class="top-bar">
       <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
@@ -179,7 +236,6 @@
     </div>
   </div>
 
-  <!-- REQUEST SCREEN -->
   <div class="screen" id="requestScreen">
     <div class="top-bar">
       <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
@@ -192,21 +248,32 @@
     </div>
   </div>
 
-  <!-- WALLET / SETTINGS SCREEN -->
   <div class="screen" id="walletScreen">
     <div class="top-bar">
       <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
-      <h2>Wallet</h2>
+      <h2>Profile &amp; Wallet</h2>
     </div>
+
     <div class="card">
-      <h3>Connected Wallet</h3>
+      <h3>Connected Wallet<span class="badge" id="walletStatusBadge">Not connected</span></h3>
       <div id="ton-connect-button"></div>
       <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
+      <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">
+        You can change your connected wallet at any time — just tap the button above and choose a different one.
+      </p>
     </div>
+
     <div class="card">
       <h3>Receive TON</h3>
       <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
       <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
+    </div>
+
+    <div class="card">
+      <h3>Other Chains &amp; Bank Account<span class="badge">Coming soon</span></h3>
+      <p style="font-size: 13px; color: #94a3b8; margin: 0;">
+        Binding wallets on other networks and linking a bank account for deposits/withdrawals will appear here once available.
+      </p>
     </div>
   </div>
 
@@ -231,10 +298,13 @@
       fetch(`/ton-balance/${userId}`)
         .then(response => response.json())
         .then(data => {
+          const banner = document.getElementById("profileBanner");
           if (!data.connected) {
             document.getElementById("balanceDisplay").textContent = "Connect wallet";
+            banner.style.display = "flex";
           } else {
             document.getElementById("balanceDisplay").textContent = data.balance + " TON";
+            banner.style.display = "none";
           }
         })
         .catch(error => {
@@ -280,10 +350,12 @@
     });
 
     tonConnectUI.onStatusChange(wallet => {
+      const badge = document.getElementById("walletStatusBadge");
       if (wallet) {
         document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
         document.getElementById('receiveAddress').textContent = wallet.account.address;
         QRCode.toCanvas(document.getElementById('qrCanvas'), wallet.account.address, { width: 200 });
+        badge.textContent = "Connected";
         fetch('/link-wallet', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -292,6 +364,7 @@
       } else {
         document.getElementById('tonAddress').textContent = '';
         document.getElementById('receiveAddress').textContent = '';
+        badge.textContent = "Not connected";
       }
     });
 
