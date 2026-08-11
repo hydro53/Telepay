@@ -11,19 +11,53 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #1a237e;
       color: white;
-      text-align: center;
-      padding: 30px 16px;
       margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    .screen {
+      display: none;
+      padding: 30px 16px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .screen.active {
+      display: block;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .back-btn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 12px 0 0;
+      width: auto;
     }
     h1 {
       font-size: 28px;
-      margin-bottom: 4px;
+      margin: 0 0 4px;
+      text-align: center;
+    }
+    h2 {
+      font-size: 20px;
+      margin: 0;
     }
     .balance {
       font-size: 44px;
       font-weight: bold;
       color: #ffffff;
       margin: 16px 0 30px;
+      text-align: center;
+    }
+    .balance-label {
+      text-align: center;
+      color: #b0bec5;
+      margin: 0;
     }
     .card {
       background: #283593;
@@ -39,6 +73,28 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .action-btn {
+      background: #283593;
+      border-radius: 14px;
+      padding: 16px 8px;
+      text-align: center;
+      cursor: pointer;
+      border: none;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .action-btn .icon {
+      font-size: 24px;
+      display: block;
+      margin-bottom: 6px;
+    }
     input {
       width: 100%;
       padding: 12px;
@@ -53,7 +109,7 @@
       outline: none;
       border-color: #4ade80;
     }
-    button {
+    button.primary {
       width: 100%;
       padding: 12px;
       font-size: 16px;
@@ -64,12 +120,13 @@
       color: #ffffff;
       cursor: pointer;
     }
-    button:active {
+    button.primary:active {
       opacity: 0.8;
     }
     #statusMessage {
       color: #94a3b8;
       min-height: 20px;
+      text-align: center;
     }
     #historyList p {
       text-align: left;
@@ -79,43 +136,78 @@
     }
     #historyList a {
       text-decoration: none;
+      color: #4ade80;
     }
   </style>
 </head>
 <body>
-  <h1>Telepay</h1>
-  <p>Your balance</p>
-  <div class="balance" id="balanceDisplay">Loading...</div>
 
-  <div class="card">
-    <h3>TON Wallet</h3>
-    <div id="ton-connect-button"></div>
-    <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
+  <!-- HOME SCREEN -->
+  <div class="screen active" id="homeScreen">
+    <h1>Telepay</h1>
+    <p class="balance-label">Your balance</p>
+    <div class="balance" id="balanceDisplay">Loading...</div>
+
+    <div class="action-grid">
+      <button class="action-btn" onclick="showScreen('sendScreen')">
+        <span class="icon">↑</span>Send
+      </button>
+      <button class="action-btn" onclick="showScreen('requestScreen')">
+        <span class="icon">↓</span>Request
+      </button>
+      <button class="action-btn" onclick="showScreen('walletScreen')">
+        <span class="icon">⚙</span>Wallet
+      </button>
+    </div>
+
+    <div class="card">
+      <h3>Recent Transactions</h3>
+      <div id="historyList"></div>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Send TON (Testnet)</h3>
-    <input type="text" id="tonRecipientInput" placeholder="@username">
-    <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
-    <button onclick="sendRealTon()">Send TON</button>
+  <!-- SEND SCREEN -->
+  <div class="screen" id="sendScreen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
+      <h2>Send TON</h2>
+    </div>
+    <div class="card">
+      <input type="text" id="tonRecipientInput" placeholder="@username">
+      <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
+      <button class="primary" onclick="sendRealTon()">Send TON</button>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Request TON</h3>
-    <input type="text" id="requestUsernameInput" placeholder="@username">
-    <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
-    <button onclick="requestRealTon()">Request TON</button>
+  <!-- REQUEST SCREEN -->
+  <div class="screen" id="requestScreen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
+      <h2>Request TON</h2>
+    </div>
+    <div class="card">
+      <input type="text" id="requestUsernameInput" placeholder="@username">
+      <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
+      <button class="primary" onclick="requestRealTon()">Request TON</button>
+    </div>
   </div>
 
-  <div class="card">
-    <h3>Recent Transactions</h3>
-    <div id="historyList"></div>
-  </div>
-
-  <div class="card">
-    <h3>Receive TON</h3>
-    <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
-    <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
+  <!-- WALLET / SETTINGS SCREEN -->
+  <div class="screen" id="walletScreen">
+    <div class="top-bar">
+      <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
+      <h2>Wallet</h2>
+    </div>
+    <div class="card">
+      <h3>Connected Wallet</h3>
+      <div id="ton-connect-button"></div>
+      <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
+    </div>
+    <div class="card">
+      <h3>Receive TON</h3>
+      <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
+      <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
+    </div>
   </div>
 
   <p id="statusMessage"></p>
@@ -126,8 +218,14 @@
     const userId = tg.initDataUnsafe?.user?.id || "7512356461";
     const urlParams = new URLSearchParams(window.location.search);
     const prefillRecipient = urlParams.get("to");
-const prefillAmount = urlParams.get("amount");
-const requestId = urlParams.get("reqid");
+    const prefillAmount = urlParams.get("amount");
+    const requestId = urlParams.get("reqid");
+
+    function showScreen(screenId) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(screenId).classList.add("active");
+      document.getElementById("statusMessage").textContent = "";
+    }
 
     function loadBalance() {
       fetch(`/ton-balance/${userId}`)
@@ -168,7 +266,6 @@ const requestId = urlParams.get("reqid");
               link.href = `https://testnet.tonviewer.com/${t.explorerAddress}`;
               link.target = "_blank";
               link.textContent = " (View)";
-              link.style.color = "#4ade80";
               line.appendChild(link);
             }
 
@@ -246,15 +343,16 @@ const requestId = urlParams.get("reqid");
         });
 
         await fetch("/notify-payment", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon, requestId })
-});
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon, requestId })
+        });
 
         setTimeout(() => {
           loadBalance();
           loadHistory();
-        }, 3000);
+          showScreen('homeScreen');
+        }, 2000);
       } catch (error) {
         console.log("Transaction error details:", error);
         document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
@@ -280,18 +378,20 @@ const requestId = urlParams.get("reqid");
         document.getElementById("statusMessage").textContent = data.error;
       } else {
         document.getElementById("statusMessage").textContent = "Request sent!";
+        setTimeout(() => showScreen('homeScreen'), 1500);
       }
     }
 
     if (prefillRecipient) {
       document.getElementById("tonRecipientInput").value = prefillRecipient;
+      showScreen('sendScreen');
     }
     if (prefillAmount) {
       document.getElementById("tonAmountInput").value = prefillAmount;
     }
     if (prefillRecipient && prefillAmount) {
       document.getElementById("statusMessage").innerHTML =
-        `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong><br>Review below and tap Send TON to confirm.`;
+        `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong>`;
     }
 
     loadBalance();
