@@ -1,61 +1,476 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>TelePay Wallet (Redesign Starter)</title>
-<style>
-body{margin:0;font-family:Arial,sans-serif;background:#10151F;color:#fff}
-.header{display:flex;justify-content:space-between;align-items:center;padding:18px}
-.profile{width:42px;height:42px;border-radius:50%;background:#299CFF;display:flex;align-items:center;justify-content:center}
-.tab{text-align:center;font-weight:bold}
-.card{background:#1A2230;margin:16px;border-radius:20px;padding:18px}
-.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px}
-.action{background:#1A2230;border-radius:16px;padding:14px;text-align:center}
-.bottom{position:fixed;bottom:0;left:0;right:0;background:#1A2230;padding:14px;display:flex;justify-content:space-around}
-</style>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <title>TelePay</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: white;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(94, 114, 235, 0.35), transparent 45%),
+        radial-gradient(circle at 100% 20%, rgba(56, 189, 248, 0.2), transparent 40%),
+        linear-gradient(180deg, #0d1445 0%, #1a237e 40%, #12185a 100%);
+      background-attachment: fixed;
+      padding-bottom: 80px;
+    }
+    .screen { display: none; padding: 16px; max-width: 400px; margin: 0 auto; }
+    .screen.active { display: block; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 18px; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      display: flex; align-items: center; justify-content: center;
+      color: #0f172a; font-weight: bold; font-size: 15px;
+    }
+    .top-bar { display: flex; align-items: center; margin-bottom: 20px; }
+    .back-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0 12px 0 0; }
+    h2 { font-size: 20px; margin: 0; }
+    .card {
+      background: linear-gradient(145deg, rgba(40, 53, 147, 0.85), rgba(26, 35, 126, 0.85));
+      border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(10px);
+      border-radius: 18px;
+      padding: 18px;
+      margin: 0 0 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .card h3 {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .setup-card {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+    }
+    .setup-card strong { display: block; color: #0f172a; font-size: 15px; margin-bottom: 8px; }
+    .setup-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(15, 23, 42, 0.12);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      cursor: pointer;
+      color: #0f172a;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .setup-row .status { font-size: 11px; opacity: 0.7; font-weight: normal; }
+    .balance-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .balance-mini {
+      background: linear-gradient(145deg, rgba(40, 53, 147, 0.85), rgba(26, 35, 126, 0.85));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: center;
+    }
+    .balance-mini .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; }
+    .balance-mini .value { font-size: 20px; font-weight: bold; margin-top: 4px; }
+    .action-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+    .action-btn {
+      background: linear-gradient(145deg, rgba(40, 53, 147, 0.9), rgba(26, 35, 126, 0.9));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 12px 4px;
+      text-align: center;
+      cursor: pointer;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .action-btn .icon { font-size: 20px; display: block; margin-bottom: 4px; }
+    .asset-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .asset-row:last-child { border-bottom: none; }
+    .asset-left { display: flex; align-items: center; gap: 10px; }
+    .asset-icon {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: bold; color: white;
+    }
+    .asset-name { font-size: 14px; font-weight: 600; }
+    .asset-sub { font-size: 11px; color: #94a3b8; }
+    .asset-value { text-align: right; font-size: 14px; font-weight: 600; }
+    input {
+      width: 100%; padding: 12px; font-size: 16px; border-radius: 10px;
+      border: 1px solid #334155; background: rgba(13,20,69,0.6); color: white; margin-bottom: 10px;
+    }
+    input:focus { outline: none; border-color: #4ade80; }
+    button.primary {
+      width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border-radius: 10px;
+      border: none; background: #000000; color: #ffffff; cursor: pointer;
+    }
+    .badge {
+      display: inline-block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;
+      background: rgba(255,255,255,0.12); color: #cbd5e1; padding: 3px 8px; border-radius: 6px; margin-left: 6px;
+    }
+    #statusMessage { color: #94a3b8; min-height: 20px; text-align: center; }
+    #historyList p { text-align: left; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); margin: 0; font-size: 13px; }
+    #historyList a { text-decoration: none; color: #4ade80; }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(13, 20, 69, 0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .nav-btn {
+      flex: 1; text-align: center; padding: 12px 0; cursor: pointer;
+      color: #94a3b8; font-size: 12px; font-weight: 600; background: none; border: none;
+    }
+    .nav-btn.active { color: white; }
+    .nav-btn .icon { font-size: 20px; display: block; margin-bottom: 2px; }
+  </style>
 </head>
 <body>
-<div class="header">
-<h2>TelePay</h2>
-<div class="profile">👤</div>
-</div>
 
-<div class="tab">Wallet</div>
+  <div class="screen active" id="walletScreen">
+    <div class="header">
+      <div class="brand">💠 TelePay</div>
+      <div class="avatar" id="avatarInitial" onclick="showScreen('profileScreen')">T</div>
+    </div>
 
-<div class="card">
-<h3>Finish setting up your wallet</h3>
-<p>• Connect crypto wallet</p>
-<p>• Link Nigerian bank account</p>
-<button>Continue</button>
-</div>
+    <div class="setup-card" id="setupCard">
+      <strong>Finish setting up your wallet</strong>
+      <div class="setup-row" onclick="showScreen('profileScreen')">
+        <span>🔗 Connect crypto wallet</span>
+        <span class="status" id="setupWalletStatus">Not connected</span>
+      </div>
+      <div class="setup-row" onclick="showComingSoon()">
+        <span>🏦 Link Nigerian bank account</span>
+        <span class="status">Coming soon</span>
+      </div>
+    </div>
 
-<div class="card">
-<h3>USD</h3>
-<h1>$0.00</h1>
-<p>NGN</p>
-<h2>₦0.00</h2>
-</div>
+    <div class="balance-cards">
+      <div class="balance-mini">
+        <div class="label">USD</div>
+        <div class="value" id="usdBalance">$0.00</div>
+      </div>
+      <div class="balance-mini">
+        <div class="label">NGN</div>
+        <div class="value">—</div>
+      </div>
+    </div>
 
-<div class="actions">
-<div class="action">Send</div>
-<div class="action">Request</div>
-<div class="action">Withdraw</div>
-<div class="action">Exchange</div>
-</div>
+    <div class="action-grid">
+      <button class="action-btn" onclick="showScreen('sendScreen')"><span class="icon">↑</span>Send</button>
+      <button class="action-btn" onclick="showScreen('requestScreen')"><span class="icon">↓</span>Request</button>
+      <button class="action-btn" onclick="showComingSoon()"><span class="icon">🏧</span>Withdraw</button>
+      <button class="action-btn" onclick="showComingSoon()"><span class="icon">⇄</span>Exchange</button>
+    </div>
 
-<div class="card">
-<h3>Crypto Portfolio</h3>
-<p>Bitcoin</p>
-<p>Ethereum</p>
-<p>Solana</p>
-<p>USDT</p>
-</div>
+    <div class="card">
+      <h3>Recent Transactions</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
 
-<div class="bottom">
-<div>Wallet</div>
-<div>Portfolio</div>
-</div>
+  <div class="screen" id="portfolioScreen">
+    <div class="header">
+      <div class="brand">💠 Portfolio</div>
+      <div class="avatar" onclick="showScreen('profileScreen')">T</div>
+    </div>
 
-<!-- Integrate your existing JavaScript from the current project below this line -->
+    <div class="card">
+      <h3>Your Assets</h3>
+      <div class="asset-row">
+        <div class="asset-left">
+          <div class="asset-icon" style="background:#0088cc;">TON</div>
+          <div><div class="asset-name">Toncoin</div><div class="asset-sub" id="tonAmountSub">0 TON</div></div>
+        </div>
+        <div class="asset-value" id="tonUsdValue">$0.00</div>
+      </div>
+      <div class="asset-row">
+        <div class="asset-left">
+          <div class="asset-icon" style="background:#f7931a;">₿</div>
+          <div><div class="asset-name">Bitcoin</div><div class="asset-sub">Not yet supported</div></div>
+        </div>
+        <div class="asset-value">0.00</div>
+      </div>
+      <div class="asset-row">
+        <div class="asset-left">
+          <div class="asset-icon" style="background:#627eea;">Ξ</div>
+          <div><div class="asset-name">Ethereum</div><div class="asset-sub">Not yet supported</div></div>
+        </div>
+        <div class="asset-value">0.00</div>
+      </div>
+      <div class="asset-row">
+        <div class="asset-left">
+          <div class="asset-icon" style="background:#9945ff;">◎</div>
+          <div><div class="asset-name">Solana</div><div class="asset-sub">Not yet supported</div></div>
+        </div>
+        <div class="asset-value">0.00</div>
+      </div>
+      <div class="asset-row">
+        <div class="asset-left">
+          <div class="asset-icon" style="background:#26a17b;">₮</div>
+          <div><div class="asset-name">USDT</div><div class="asset-sub">Not yet supported</div></div>
+        </div>
+        <div class="asset-value">0.00</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="sendScreen">
+    <div class="top-bar"><button class="back-btn" onclick="showScreen('walletScreen')">←</button><h2>Send TON</h2></div>
+    <div class="card">
+      <input type="text" id="tonRecipientInput" placeholder="@username">
+      <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
+      <button class="primary" onclick="sendRealTon()">Send TON</button>
+    </div>
+  </div>
+
+  <div class="screen" id="requestScreen">
+    <div class="top-bar"><button class="back-btn" onclick="showScreen('walletScreen')">←</button><h2>Request TON</h2></div>
+    <div class="card">
+      <input type="text" id="requestUsernameInput" placeholder="@username">
+      <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
+      <button class="primary" onclick="requestRealTon()">Request TON</button>
+    </div>
+  </div>
+
+  <div class="screen" id="profileScreen">
+    <div class="top-bar"><button class="back-btn" onclick="showScreen('walletScreen')">←</button><h2>Wallet Settings</h2></div>
+    <div class="card">
+      <h3>Connected Wallet<span class="badge" id="walletStatusBadge">Not connected</span></h3>
+      <div id="ton-connect-button"></div>
+      <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
+    </div>
+    <div class="card">
+      <h3>Receive TON</h3>
+      <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
+      <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
+    </div>
+  </div>
+
+  <p id="statusMessage"></p>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="navWallet" onclick="showScreen('walletScreen')"><span class="icon">💠</span>Wallet</button>
+    <button class="nav-btn" id="navPortfolio" onclick="showScreen('portfolioScreen')"><span class="icon">📊</span>Portfolio</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const userId = tg.initDataUnsafe?.user?.id || "7512356461";
+    const telegramFirstName = tg.initDataUnsafe?.user?.first_name || "T";
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillRecipient = urlParams.get("to");
+    const prefillAmount = urlParams.get("amount");
+    const requestId = urlParams.get("reqid");
+    let currentTonBalance = 0;
+    let tonUsdPrice = 0;
+
+    document.getElementById("avatarInitial").textContent = telegramFirstName.charAt(0).toUpperCase();
+
+    function showScreen(screenId) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(screenId).classList.add("active");
+      document.getElementById("statusMessage").textContent = "";
+      document.getElementById("navWallet").classList.toggle("active", screenId === "walletScreen");
+      document.getElementById("navPortfolio").classList.toggle("active", screenId === "portfolioScreen");
+    }
+
+    function showComingSoon() {
+      document.getElementById("statusMessage").textContent = "This feature is coming soon.";
+    }
+
+    function updateUsdDisplay() {
+      const usd = (currentTonBalance * tonUsdPrice).toFixed(2);
+      document.getElementById("usdBalance").textContent = "$" + usd;
+      document.getElementById("tonUsdValue").textContent = "$" + usd;
+    }
+
+    function loadPrice() {
+      fetch("/ton-price")
+        .then(r => r.json())
+        .then(data => {
+          tonUsdPrice = data.usdPrice || 0;
+          updateUsdDisplay();
+        });
+    }
+
+    function loadBalance() {
+      fetch(`/ton-balance/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          const setupStatus = document.getElementById("setupWalletStatus");
+          if (!data.connected) {
+            setupStatus.textContent = "Not connected";
+            document.getElementById("tonAmountSub").textContent = "0 TON";
+          } else {
+            currentTonBalance = data.balance;
+            setupStatus.textContent = "Connected";
+            document.getElementById("tonAmountSub").textContent = data.balance + " TON";
+            updateUsdDisplay();
+          }
+        });
+    }
+
+    function loadHistory() {
+      fetch(`/transactions/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+          const container = document.getElementById("historyList");
+          container.innerHTML = "";
+          if (!data.transactions || data.transactions.length === 0) {
+            container.textContent = "No transactions yet.";
+            return;
+          }
+          data.transactions.forEach(t => {
+            const isSender = t.from == userId;
+            const direction = isSender ? "Sent" : "Received";
+            const date = new Date(t.date).toLocaleDateString();
+            const line = document.createElement("p");
+            line.innerHTML = `${direction} ${t.amount} TON — ${date}`;
+            if (t.explorerAddress) {
+              const link = document.createElement("a");
+              link.href = `https://testnet.tonviewer.com/${t.explorerAddress}`;
+              link.target = "_blank";
+              link.textContent = " (View)";
+              line.appendChild(link);
+            }
+            container.appendChild(line);
+          });
+        });
+    }
+
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
+      buttonRootId: 'ton-connect-button'
+    });
+
+    tonConnectUI.onStatusChange(wallet => {
+      const badge = document.getElementById("walletStatusBadge");
+      if (wallet) {
+        document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
+        document.getElementById('receiveAddress').textContent = wallet.account.address;
+        QRCode.toCanvas(document.getElementById('qrCanvas'), wallet.account.address, { width: 200 });
+        badge.textContent = "Connected";
+        fetch('/link-wallet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, tonAddress: wallet.account.address })
+        }).then(() => loadBalance());
+      } else {
+        document.getElementById('tonAddress').textContent = '';
+        document.getElementById('receiveAddress').textContent = '';
+        badge.textContent = "Not connected";
+      }
+    });
+
+    async function sendRealTon() {
+      const recipientUsername = document.getElementById("tonRecipientInput").value.replace("@", "");
+      const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
+
+      if (!tonConnectUI.connected) {
+        document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
+        return;
+      }
+
+      document.getElementById("statusMessage").textContent = "Looking up recipient...";
+
+      let recipientAddress;
+      try {
+        const lookupResponse = await fetch(`/resolve-ton-address/${recipientUsername}`);
+        const lookupData = await lookupResponse.json();
+        if (lookupData.error) {
+          document.getElementById("statusMessage").textContent = lookupData.error;
+          return;
+        }
+        recipientAddress = lookupData.tonAddress;
+      } catch (error) {
+        document.getElementById("statusMessage").textContent = "Failed to look up recipient.";
+        return;
+      }
+
+      const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
+      const transaction = {
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: recipientAddress, amount: amountNano }]
+      };
+
+      try {
+        await tonConnectUI.sendTransaction(transaction);
+        document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
+
+        await fetch("/log-transaction", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon, explorerAddress: recipientAddress })
+        });
+
+        await fetch("/notify-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon, requestId })
+        });
+
+        setTimeout(() => {
+          loadBalance();
+          loadHistory();
+          showScreen('walletScreen');
+        }, 2000);
+      } catch (error) {
+        document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
+      }
+    }
+
+    async function requestRealTon() {
+      const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
+      const amount = document.getElementById("requestAmountInput").value;
+
+      const response = await fetch("/send-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requesterId: userId, targetUsername, amount })
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        document.getElementById("statusMessage").textContent = data.error;
+      } else {
+        document.getElementById("statusMessage").textContent = "Request sent!";
+        setTimeout(() => showScreen('walletScreen'), 1500);
+      }
+    }
+
+    if (prefillRecipient) {
+      document.getElementById("tonRecipientInput").value = prefillRecipient;
+      showScreen('sendScreen');
+    }
+    if (prefillAmount) {
+      document.getElementById("tonAmountInput").value = prefillAmount;
+    }
+    if (prefillRecipient && prefillAmount) {
+      document.getElementById("statusMessage").innerHTML = `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong>`;
+    }
+
+    loadBalance();
+    loadHistory();
+    loadPrice();
+  </script>
 </body>
 </html>

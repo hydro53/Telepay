@@ -201,6 +201,16 @@ app.get("/debug-usernames", (req, res) => {
   res.json({ usernames: data.usernames });
 });
 
+app.get("/ton-price", async (req, res) => {
+  try {
+    const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd");
+    const data = await response.json();
+    res.json({ usdPrice: data["the-open-network"]?.usd || 0 });
+  } catch (error) {
+    res.json({ usdPrice: 0 });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
