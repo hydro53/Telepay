@@ -1,474 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <title>Telepay Wallet</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: white;
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at 15% 0%, rgba(94, 114, 235, 0.35), transparent 45%),
-        radial-gradient(circle at 100% 20%, rgba(56, 189, 248, 0.2), transparent 40%),
-        radial-gradient(circle at 90% 90%, rgba(74, 222, 128, 0.12), transparent 40%),
-        linear-gradient(180deg, #0d1445 0%, #1a237e 40%, #12185a 100%);
-      background-attachment: fixed;
-    }
-    .screen {
-      display: none;
-      padding: 30px 16px 60px;
-      max-width: 400px;
-      margin: 0 auto;
-    }
-    .screen.active {
-      display: block;
-    }
-    .top-bar {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .back-btn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 0 12px 0 0;
-      width: auto;
-    }
-    h1 {
-      font-size: 28px;
-      margin: 0 0 4px;
-      text-align: center;
-      letter-spacing: 0.5px;
-    }
-    h2 {
-      font-size: 20px;
-      margin: 0;
-    }
-    .balance {
-      font-size: 44px;
-      font-weight: bold;
-      color: #ffffff;
-      margin: 16px 0 6px;
-      text-align: center;
-      text-shadow: 0 2px 20px rgba(94, 114, 235, 0.6);
-    }
-    .balance-label {
-      text-align: center;
-      color: #b0bec5;
-      margin: 0;
-      font-size: 13px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .card {
-      background: linear-gradient(145deg, rgba(40, 53, 147, 0.85), rgba(26, 35, 126, 0.85));
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(10px);
-      border-radius: 18px;
-      padding: 20px;
-      margin: 16px auto;
-      max-width: 400px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    }
-    .card h3 {
-      margin-top: 0;
-      font-size: 14px;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    .profile-banner {
-      background: linear-gradient(135deg, #4ade80, #22c55e);
-      border-radius: 18px;
-      padding: 18px 20px;
-      margin: 16px auto 24px;
-      max-width: 400px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35);
-    }
-    .profile-banner div strong {
-      display: block;
-      color: #0f172a;
-      font-size: 15px;
-    }
-    .profile-banner div span {
-      color: #0f172a;
-      opacity: 0.75;
-      font-size: 12px;
-    }
-    .profile-banner .arrow {
-      color: #0f172a;
-      font-size: 20px;
-      font-weight: bold;
-    }
-    .action-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 12px;
-      margin: 24px 0;
-    }
-    .action-btn {
-      background: linear-gradient(145deg, rgba(40, 53, 147, 0.9), rgba(26, 35, 126, 0.9));
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 16px;
-      padding: 16px 8px;
-      text-align: center;
-      cursor: pointer;
-      color: white;
-      font-size: 14px;
-      font-weight: bold;
-    }
-    .action-btn .icon {
-      font-size: 24px;
-      display: block;
-      margin-bottom: 6px;
-    }
-    input {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #334155;
-      background: rgba(13, 20, 69, 0.6);
-      color: white;
-      margin-bottom: 10px;
-    }
-    input:focus {
-      outline: none;
-      border-color: #4ade80;
-    }
-    button.primary {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 10px;
-      border: none;
-      background: #000000;
-      color: #ffffff;
-      cursor: pointer;
-    }
-    button.primary:active {
-      opacity: 0.8;
-    }
-    .badge {
-      display: inline-block;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      background: rgba(255, 255, 255, 0.12);
-      color: #cbd5e1;
-      padding: 3px 8px;
-      border-radius: 6px;
-      margin-left: 6px;
-    }
-    #statusMessage {
-      color: #94a3b8;
-      min-height: 20px;
-      text-align: center;
-    }
-    #historyList p {
-      text-align: left;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      margin: 0;
-    }
-    #historyList a {
-      text-decoration: none;
-      color: #4ade80;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>TelePay Wallet (Redesign Starter)</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#10151F;color:#fff}
+.header{display:flex;justify-content:space-between;align-items:center;padding:18px}
+.profile{width:42px;height:42px;border-radius:50%;background:#299CFF;display:flex;align-items:center;justify-content:center}
+.tab{text-align:center;font-weight:bold}
+.card{background:#1A2230;margin:16px;border-radius:20px;padding:18px}
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px}
+.action{background:#1A2230;border-radius:16px;padding:14px;text-align:center}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#1A2230;padding:14px;display:flex;justify-content:space-around}
+</style>
 </head>
 <body>
+<div class="header">
+<h2>TelePay</h2>
+<div class="profile">👤</div>
+</div>
 
-  <div class="screen active" id="homeScreen">
-    <h1>Telepay</h1>
-    <p class="balance-label">Your balance</p>
-    <div class="balance" id="balanceDisplay">Loading...</div>
+<div class="tab">Wallet</div>
 
-    <div class="profile-banner" id="profileBanner" style="display: none;" onclick="showScreen('walletScreen')">
-      <div>
-        <strong>Complete your profile</strong>
-        <span>Connect a wallet to send &amp; receive</span>
-      </div>
-      <div class="arrow">→</div>
-    </div>
+<div class="card">
+<h3>Finish setting up your wallet</h3>
+<p>• Connect crypto wallet</p>
+<p>• Link Nigerian bank account</p>
+<button>Continue</button>
+</div>
 
-    <div class="action-grid">
-      <button class="action-btn" onclick="showScreen('sendScreen')">
-        <span class="icon">↑</span>Send
-      </button>
-      <button class="action-btn" onclick="showScreen('requestScreen')">
-        <span class="icon">↓</span>Request
-      </button>
-      <button class="action-btn" onclick="showScreen('walletScreen')">
-        <span class="icon">⚙</span>Wallet
-      </button>
-    </div>
+<div class="card">
+<h3>USD</h3>
+<h1>$0.00</h1>
+<p>NGN</p>
+<h2>₦0.00</h2>
+</div>
 
-    <div class="card">
-      <h3>Recent Transactions</h3>
-      <div id="historyList"></div>
-    </div>
-  </div>
+<div class="actions">
+<div class="action">Send</div>
+<div class="action">Request</div>
+<div class="action">Withdraw</div>
+<div class="action">Exchange</div>
+</div>
 
-  <div class="screen" id="sendScreen">
-    <div class="top-bar">
-      <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
-      <h2>Send TON</h2>
-    </div>
-    <div class="card">
-      <input type="text" id="tonRecipientInput" placeholder="@username">
-      <input type="number" id="tonAmountInput" placeholder="Amount (TON)" step="0.01">
-      <button class="primary" onclick="sendRealTon()">Send TON</button>
-    </div>
-  </div>
+<div class="card">
+<h3>Crypto Portfolio</h3>
+<p>Bitcoin</p>
+<p>Ethereum</p>
+<p>Solana</p>
+<p>USDT</p>
+</div>
 
-  <div class="screen" id="requestScreen">
-    <div class="top-bar">
-      <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
-      <h2>Request TON</h2>
-    </div>
-    <div class="card">
-      <input type="text" id="requestUsernameInput" placeholder="@username">
-      <input type="number" id="requestAmountInput" placeholder="Amount (TON)" step="0.01">
-      <button class="primary" onclick="requestRealTon()">Request TON</button>
-    </div>
-  </div>
+<div class="bottom">
+<div>Wallet</div>
+<div>Portfolio</div>
+</div>
 
-  <div class="screen" id="walletScreen">
-    <div class="top-bar">
-      <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
-      <h2>Profile &amp; Wallet</h2>
-    </div>
-
-    <div class="card">
-      <h3>Connected Wallet<span class="badge" id="walletStatusBadge">Not connected</span></h3>
-      <div id="ton-connect-button"></div>
-      <p id="tonAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all;"></p>
-      <p style="font-size: 12px; color: #94a3b8; margin-top: 10px;">
-        You can change your connected wallet at any time — just tap the button above and choose a different one.
-      </p>
-    </div>
-
-    <div class="card">
-      <h3>Receive TON</h3>
-      <canvas id="qrCanvas" style="max-width: 200px; margin: 0 auto; display: block;"></canvas>
-      <p id="receiveAddress" style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 12px;"></p>
-    </div>
-
-    <div class="card">
-      <h3>Other Chains &amp; Bank Account<span class="badge">Coming soon</span></h3>
-      <p style="font-size: 13px; color: #94a3b8; margin: 0;">
-        Binding wallets on other networks and linking a bank account for deposits/withdrawals will appear here once available.
-      </p>
-    </div>
-  </div>
-
-  <p id="statusMessage"></p>
-
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    const userId = tg.initDataUnsafe?.user?.id || "7512356461";
-    const urlParams = new URLSearchParams(window.location.search);
-    const prefillRecipient = urlParams.get("to");
-    const prefillAmount = urlParams.get("amount");
-    const requestId = urlParams.get("reqid");
-
-    function showScreen(screenId) {
-      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-      document.getElementById(screenId).classList.add("active");
-      document.getElementById("statusMessage").textContent = "";
-    }
-
-    function loadBalance() {
-      fetch(`/ton-balance/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          const banner = document.getElementById("profileBanner");
-          if (!data.connected) {
-            document.getElementById("balanceDisplay").textContent = "Connect wallet";
-            banner.style.display = "flex";
-          } else {
-            document.getElementById("balanceDisplay").textContent = data.balance + " TON";
-            banner.style.display = "none";
-          }
-        })
-        .catch(error => {
-          document.getElementById("balanceDisplay").textContent = "Error loading balance";
-        });
-    }
-
-    function loadHistory() {
-      fetch(`/transactions/${userId}`)
-        .then(response => response.json())
-        .then(data => {
-          const container = document.getElementById("historyList");
-          container.innerHTML = "";
-
-          if (!data.transactions || data.transactions.length === 0) {
-            container.textContent = "No transactions yet.";
-            return;
-          }
-
-          data.transactions.forEach(t => {
-            const isSender = t.from == userId;
-            const direction = isSender ? "Sent" : "Received";
-            const date = new Date(t.date).toLocaleDateString();
-            const line = document.createElement("p");
-            line.innerHTML = `${direction} ${t.amount} TON — ${date}`;
-
-            if (t.explorerAddress) {
-              const link = document.createElement("a");
-              link.href = `https://testnet.tonviewer.com/${t.explorerAddress}`;
-              link.target = "_blank";
-              link.textContent = " (View)";
-              line.appendChild(link);
-            }
-
-            container.appendChild(line);
-          });
-        });
-    }
-
-    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
-      manifestUrl: 'https://telepay-production.up.railway.app/tonconnect-manifest.json',
-      buttonRootId: 'ton-connect-button'
-    });
-
-    tonConnectUI.onStatusChange(wallet => {
-      const badge = document.getElementById("walletStatusBadge");
-      if (wallet) {
-        document.getElementById('tonAddress').textContent = 'Connected: ' + wallet.account.address;
-        document.getElementById('receiveAddress').textContent = wallet.account.address;
-        QRCode.toCanvas(document.getElementById('qrCanvas'), wallet.account.address, { width: 200 });
-        badge.textContent = "Connected";
-        fetch('/link-wallet', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, tonAddress: wallet.account.address })
-        }).then(() => loadBalance());
-      } else {
-        document.getElementById('tonAddress').textContent = '';
-        document.getElementById('receiveAddress').textContent = '';
-        badge.textContent = "Not connected";
-      }
-    });
-
-    async function sendRealTon() {
-      const recipientUsername = document.getElementById("tonRecipientInput").value.replace("@", "");
-      const amountTon = parseFloat(document.getElementById("tonAmountInput").value);
-
-      if (!tonConnectUI.connected) {
-        document.getElementById("statusMessage").textContent = "Please connect your wallet first.";
-        return;
-      }
-
-      document.getElementById("statusMessage").textContent = "Looking up recipient...";
-
-      let recipientAddress;
-      try {
-        const lookupResponse = await fetch(`/resolve-ton-address/${recipientUsername}`);
-        const lookupData = await lookupResponse.json();
-        if (lookupData.error) {
-          document.getElementById("statusMessage").textContent = lookupData.error;
-          return;
-        }
-        recipientAddress = lookupData.tonAddress;
-      } catch (error) {
-        document.getElementById("statusMessage").textContent = "Failed to look up recipient.";
-        return;
-      }
-
-      const amountNano = Math.floor(amountTon * 1_000_000_000).toString();
-
-      const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [
-          {
-            address: recipientAddress,
-            amount: amountNano
-          }
-        ]
-      };
-
-      try {
-        await tonConnectUI.sendTransaction(transaction);
-        document.getElementById("statusMessage").textContent = "Transaction sent! Check your wallet.";
-
-        await fetch("/log-transaction", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ from: userId, to: recipientUsername, amount: amountTon, explorerAddress: recipientAddress })
-        });
-
-        await fetch("/notify-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ senderId: userId, recipientUsername, amount: amountTon, requestId })
-        });
-
-        setTimeout(() => {
-          loadBalance();
-          loadHistory();
-          showScreen('homeScreen');
-        }, 2000);
-      } catch (error) {
-        console.log("Transaction error details:", error);
-        document.getElementById("statusMessage").textContent = "Error: " + (error.message || "Transaction cancelled or failed.");
-      }
-    }
-
-    async function requestRealTon() {
-      const targetUsername = document.getElementById("requestUsernameInput").value.replace("@", "");
-      const amount = document.getElementById("requestAmountInput").value;
-
-      const response = await fetch("/send-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requesterId: userId,
-          targetUsername,
-          amount
-        })
-      });
-      const data = await response.json();
-
-      if (data.error) {
-        document.getElementById("statusMessage").textContent = data.error;
-      } else {
-        document.getElementById("statusMessage").textContent = "Request sent!";
-        setTimeout(() => showScreen('homeScreen'), 1500);
-      }
-    }
-
-    if (prefillRecipient) {
-      document.getElementById("tonRecipientInput").value = prefillRecipient;
-      showScreen('sendScreen');
-    }
-    if (prefillAmount) {
-      document.getElementById("tonAmountInput").value = prefillAmount;
-    }
-    if (prefillRecipient && prefillAmount) {
-      document.getElementById("statusMessage").innerHTML =
-        `<strong>Sending ${prefillAmount} TON to @${prefillRecipient}</strong>`;
-    }
-
-    loadBalance();
-    loadHistory();
-  </script>
+<!-- Integrate your existing JavaScript from the current project below this line -->
 </body>
 </html>
